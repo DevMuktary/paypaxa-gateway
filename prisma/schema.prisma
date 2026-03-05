@@ -7,15 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                 String    @id @default(uuid())
+  merchantId         String?   @unique
+  merchant           Merchant? @relation(fields: [merchantId], references: [id])
+  email              String    @unique
+  passwordHash       String
+  isEmailVerified    Boolean   @default(false)
+  verificationToken  String?
+  verificationExpiry DateTime?
+  twoFactorOtp       String?
+  twoFactorExpiry    DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
 model Merchant {
   id           String   @id @default(uuid())
   businessName String
   kycTier      Int      @default(1)
   apiPublicKey String   @unique
   apiSecretKey String   @unique
+  user         User?
+  wallets      Wallet[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  wallets      Wallet[]
 }
 
 model Wallet {
@@ -38,9 +54,9 @@ model Transaction {
   amount      Decimal
   fee         Decimal
   netAmount   Decimal
-  type        String   // "CREDIT" or "DEBIT"
-  status      String   // "PENDING", "SUCCESS", "FAILED"
-  processor   String   // "PAYSTACK", "FLUTTERWAVE", "OPAY", "PALMPAY"
+  type        String   
+  status      String   
+  processor   String   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
