@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id           String   @id @default(uuid())
+  businessName String
+  kycTier      Int      @default(1)
+  apiPublicKey String   @unique
+  apiSecretKey String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  wallets      Wallet[]
+}
+
+model Wallet {
+  id               String        @id @default(uuid())
+  merchantId       String
+  merchant         Merchant      @relation(fields: [merchantId], references: [id])
+  availableBalance Decimal       @default(0.00)
+  ledgerBalance    Decimal       @default(0.00)
+  currency         String        @default("NGN")
+  transactions     Transaction[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  reference   String   @unique
+  amount      Decimal
+  fee         Decimal
+  netAmount   Decimal
+  type        String   // "CREDIT" or "DEBIT"
+  status      String   // "PENDING", "SUCCESS", "FAILED"
+  processor   String   // "PAYSTACK", "FLUTTERWAVE", "OPAY", "PALMPAY"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
