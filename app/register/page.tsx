@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -9,35 +9,83 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     email: '',
-    phoneNumber: '',
     password: '',
     confirmPassword: '',
     businessType: 'STARTER',
     isDeveloper: 'no'
   });
   
+  // New States for requested features
+  const [phoneDigits, setPhoneDigits] = useState('');
+  const [phoneCode, setPhoneCode] = useState('+234');
+  const [emailValid, setEmailValid] = useState<boolean | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
+
+  // Auto-update phone code when country changes
+  const countryCodes: Record<string, string> = {
+    'Nigeria': '+234',
+    'Ghana': '+233',
+    'Kenya': '+254',
+    'South Africa': '+27',
+    'Other': ''
+  };
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedCountry = e.target.value;
+    setFormData({ ...formData, country: selectedCountry });
+    setPhoneCode(countryCodes[selectedCountry] || '');
+  };
+
+  // Smart Phone Number Handler (Strips leading zero)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, ''); // Only allow numbers
+    if (val.startsWith('0')) {
+      val = val.substring(1); // Remove the zero and shift the rest forward
+    }
+    setPhoneDigits(val);
+  };
+
+  // Real-time Email Validator
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setFormData({ ...formData, email: val });
+    if (val === '') {
+      setEmailValid(null);
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      setEmailValid(emailRegex.test(val));
+    }
+  };
 
   // Dynamic Password Strength Calculator
   const calculateStrength = (pass: string) => {
     let score = 0;
     if (!pass) return score;
-    if (pass.length >= 8) score += 1; // Base length
-    if (/[A-Z]/.test(pass)) score += 1; // Has uppercase
-    if (/[0-9]/.test(pass)) score += 1; // Has number
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1; // Has special character
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
     return score; 
   };
 
   const strengthScore = calculateStrength(formData.password);
-  const strengthColors = ['#1E293B', '#EF4444', '#F59E0B', '#3B82F6', '#22C55E']; // Default, Red, Yellow, Blue, Green
+  const strengthColors = ['#1E293B', '#EF4444', '#F59E0B', '#3B82F6', '#22C55E'];
   const strengthLabels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setStatus({ type: '', message: '' });
+
+    if (!emailValid) {
+      setStatus({ type: 'error', message: 'Please enter a valid email address.' });
+      setLoading(false);
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setStatus({ type: 'error', message: 'Passwords do not match.' });
@@ -51,25 +99,32 @@ export default function RegisterPage() {
       return;
     }
 
+    if (phoneDigits.length < 8) {
+      setStatus({ type: 'error', message: 'Please enter a valid phone number.' });
+      setLoading(false);
+      return;
+    }
+
+    // Combine code and digits for backend
+    const fullPhoneNumber = `${phoneCode}${phoneDigits}`;
+    const payload = { ...formData, phoneNumber: fullPhoneNumber };
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
 
       setStatus({ type: 'success', message: data.message });
-      setFormData({
-        country: 'Nigeria', businessName: '', firstName: '', lastName: '', 
-        email: '', phoneNumber: '', password: '', confirmPassword: '', 
-        businessType: 'STARTER', isDeveloper: 'no'
-      });
+      // Reset form on success
+      setFormData({ country: 'Nigeria', businessName: '', firstName: '', lastName: '', email: '', password: '', confirmPassword: '', businessType: 'STARTER', isDeveloper: 'no' });
+      setPhoneDigits('');
+      setEmailValid(null);
     } catch (error: any) {
       setStatus({ type: 'error', message: error.message });
     } finally {
@@ -77,29 +132,46 @@ export default function RegisterPage() {
     }
   };
 
+  // SVG Icons for Password Toggle
+  const EyeOpen = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  );
+
+  const EyeClosed = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+      <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>
+  );
+
   return (
     <>
-      {/* Custom CSS for mobile stability and premium hover/focus states. 
-        Added global overflow-x: hidden and strict box-sizing to fix mobile "shaking".
+      {/* Safari Fix: html & body strict width constraints. 
+        Custom Input Groups for Phone and Password fields.
       */}
       <style dangerouslySetInnerHTML={{__html: `
-        body { 
+        html, body { 
           margin: 0; 
+          padding: 0;
           background-color: #060B19; 
+          width: 100vw;
+          max-width: 100vw;
           overflow-x: hidden; 
-          width: 100%;
+          -webkit-overflow-scrolling: touch;
         }
-        * {
-          box-sizing: border-box;
-        }
-        .paypaxa-container {
+        * { box-sizing: border-box; }
+        .viewport-wrapper {
           min-height: 100vh;
           width: 100%;
+          overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          padding: 3rem 1rem;
+          font-family: system-ui, -apple-system, sans-serif;
+          padding: 2rem 1rem;
           background: radial-gradient(circle at top right, #0A1635 0%, #060B19 100%);
         }
         .paypaxa-card {
@@ -128,12 +200,27 @@ export default function RegisterPage() {
           outline: none;
           transition: all 0.2s ease;
         }
-        .paypaxa-input::placeholder {
-          color: #475569;
-        }
-        .paypaxa-input:focus {
+        .paypaxa-input::placeholder { color: #475569; }
+        .paypaxa-input:focus, .paypaxa-input-group:focus-within {
           border-color: #3B82F6;
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .paypaxa-input-group {
+          display: flex;
+          align-items: center;
+          border-radius: 8px;
+          border: 1px solid #1E293B;
+          background-color: #060B19;
+          transition: all 0.2s ease;
+          overflow: hidden;
+        }
+        .paypaxa-input-group select, .paypaxa-input-group input {
+          border: none;
+          background: transparent;
+          color: #F8FAFC;
+          padding: 14px 16px;
+          font-size: 15px;
+          outline: none;
         }
         .paypaxa-btn {
           width: 100%;
@@ -148,16 +235,11 @@ export default function RegisterPage() {
           transition: background-color 0.2s;
           margin-top: 1rem;
         }
-        .paypaxa-btn:hover:not(:disabled) {
-          background-color: #1D4ED8;
-        }
-        .paypaxa-btn:disabled {
-          background-color: #1E293B;
-          color: #64748B;
-          cursor: not-allowed;
-        }
+        .paypaxa-btn:hover:not(:disabled) { background-color: #1D4ED8; }
+        .paypaxa-btn:disabled { background-color: #1E293B; color: #64748B; cursor: not-allowed; }
         .paypaxa-label {
-          display: block;
+          display: flex;
+          justify-content: space-between;
           font-size: 14px;
           margin-bottom: 8px;
           font-weight: 500;
@@ -170,22 +252,29 @@ export default function RegisterPage() {
           transition: all 0.2s;
           background-color: #060B19;
         }
-        .selection-card:hover {
-          border-color: #475569 !important;
-        }
-        /* Mobile Optimization overrides */
+        .selection-card:hover { border-color: #475569 !important; }
+        
         @media (max-width: 640px) {
           .paypaxa-card { padding: 2rem 1.25rem; }
           .paypaxa-grid { grid-template-columns: 1fr; gap: 1rem; }
         }
       `}} />
 
-      <div className="paypaxa-container">
+      <div className="viewport-wrapper">
         <div className="paypaxa-card">
           
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+            {/* The Real Logo Img Tag - Make sure logo.svg is in your public folder! */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <img src="/logo.png" alt="PAYPAXA Logo" style={{ height: '36px', width: 'auto', borderRadius: '4px' }} 
+                onError={(e) => {
+                  // Fallback in case logo isn't uploaded yet
+                  (e.target as HTMLElement).style.display = 'none';
+                  (e.target as HTMLElement).nextElementSibling!.classList.remove('hidden');
+                }} 
+              />
+              {/* Fallback SVG if real logo fails to load */}
+              <svg className="hidden" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'none' }}>
                 <rect width="32" height="32" rx="8" fill="#2563EB"/>
                 <path d="M10 16L14 20L22 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -213,7 +302,7 @@ export default function RegisterPage() {
             <div className="paypaxa-grid">
               <div>
                 <label className="paypaxa-label">Country</label>
-                <select className="paypaxa-input" value={formData.country} onChange={(e) => setFormData({...formData, country: e.target.value})}>
+                <select className="paypaxa-input" value={formData.country} onChange={handleCountryChange}>
                   <option value="Nigeria">Nigeria</option>
                   <option value="Ghana">Ghana</option>
                   <option value="Kenya">Kenya</option>
@@ -240,21 +329,62 @@ export default function RegisterPage() {
 
             <div className="paypaxa-grid">
               <div>
-                <label className="paypaxa-label">Work Email</label>
-                <input type="email" required className="paypaxa-input" placeholder="jane@example.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                <label className="paypaxa-label">
+                  <span>Work Email</span>
+                  {/* Real-time Email Check Indicator */}
+                  {emailValid === true && <span style={{ color: '#22C55E' }}>✓ Valid</span>}
+                  {emailValid === false && <span style={{ color: '#EF4444' }}>Invalid format</span>}
+                </label>
+                <input type="email" required className="paypaxa-input" placeholder="name@company.com" value={formData.email} onChange={handleEmailChange} style={{ borderColor: emailValid === false ? '#EF4444' : '' }} />
               </div>
+              
               <div>
                 <label className="paypaxa-label">Phone Number</label>
-                <input type="tel" required className="paypaxa-input" placeholder="+234..." value={formData.phoneNumber} onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})} />
+                <div className="paypaxa-input-group">
+                  <select 
+                    value={phoneCode} 
+                    onChange={(e) => setPhoneCode(e.target.value)}
+                    style={{ borderRight: '1px solid #1E293B', paddingRight: '4px', width: '90px', color: '#94A3B8' }}
+                  >
+                    <option value="+234">+234</option>
+                    <option value="+233">+233</option>
+                    <option value="+254">+254</option>
+                    <option value="+27">+27</option>
+                  </select>
+                  <input 
+                    type="tel" 
+                    required 
+                    placeholder="801 234 5678" 
+                    value={phoneDigits} 
+                    onChange={handlePhoneChange} 
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
             </div>
 
             <div className="paypaxa-grid">
               <div>
                 <label className="paypaxa-label">Secure Password</label>
-                <input type="password" required minLength={8} className="paypaxa-input" placeholder="••••••••" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    required minLength={8} 
+                    className="paypaxa-input" 
+                    placeholder="••••••••" 
+                    value={formData.password} 
+                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                  >
+                    {showPassword ? <EyeOpen /> : <EyeClosed />}
+                  </button>
+                </div>
                 
-                {/* Real-time Password Health Checker */}
                 <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
                   {[1, 2, 3, 4].map(level => (
                     <div key={level} style={{
@@ -265,7 +395,7 @@ export default function RegisterPage() {
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '500', color: strengthScore > 0 ? strengthColors[strengthScore] : '#64748B', transition: 'color 0.3s ease' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '500', color: strengthScore > 0 ? strengthColors[strengthScore] : '#64748B' }}>
                     {strengthScore > 0 ? strengthLabels[strengthScore] : 'Minimum 8 characters'}
                   </span>
                 </div>
@@ -273,7 +403,24 @@ export default function RegisterPage() {
 
               <div>
                 <label className="paypaxa-label">Confirm Password</label>
-                <input type="password" required minLength={8} className="paypaxa-input" placeholder="••••••••" value={formData.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    required minLength={8} 
+                    className="paypaxa-input" 
+                    placeholder="••••••••" 
+                    value={formData.confirmPassword} 
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                  >
+                    {showConfirmPassword ? <EyeOpen /> : <EyeClosed />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -288,7 +435,7 @@ export default function RegisterPage() {
                   style={{ border: `2px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: formData.businessType === 'STARTER' ? 'rgba(59, 130, 246, 0.05)' : '#060B19' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19', boxSizing: 'border-box' }}></div>
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19' }}></div>
                     <strong style={{ color: '#F8FAFC', fontSize: '15px' }}>Starter Business</strong>
                   </div>
                   <p style={{ margin: '6px 0 0 30px', fontSize: '13px', color: '#94A3B8', lineHeight: '1.5' }}>
@@ -302,7 +449,7 @@ export default function RegisterPage() {
                   style={{ border: `2px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: formData.businessType === 'REGISTERED' ? 'rgba(59, 130, 246, 0.05)' : '#060B19' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19', boxSizing: 'border-box' }}></div>
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19' }}></div>
                     <strong style={{ color: '#F8FAFC', fontSize: '15px' }}>Registered Business</strong>
                   </div>
                   <p style={{ margin: '6px 0 0 30px', fontSize: '13px', color: '#94A3B8', lineHeight: '1.5' }}>
