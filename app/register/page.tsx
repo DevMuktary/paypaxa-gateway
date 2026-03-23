@@ -1,6 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+// Next.js viewport export to strictly disable pinch-to-zoom at the document level
+import type { Viewport } from 'next';
+
+// This is the magic lock for mobile browsers
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -141,9 +151,6 @@ export default function RegisterPage() {
 
   return (
     <>
-      {/* Safari/iOS Bulletproof Anti-Drag CSS 
-        Uses 100% instead of 100vw, globally enforces box-sizing, and locks overflow at multiple levels.
-      */}
       <style dangerouslySetInnerHTML={{__html: `
         html, body { 
           margin: 0; 
@@ -153,6 +160,8 @@ export default function RegisterPage() {
           overflow-x: hidden; 
           position: relative;
           -webkit-overflow-scrolling: touch;
+          /* Kills manual pinch zoom gestures in CSS */
+          touch-action: pan-x pan-y; 
         }
         *, *::before, *::after { 
           box-sizing: border-box; 
@@ -191,9 +200,11 @@ export default function RegisterPage() {
           border: 1px solid #1E293B;
           background-color: #060B19;
           color: #F8FAFC;
-          font-size: 15px;
+          /* CRITICAL: Must be 16px to prevent iOS Safari auto-zoom on focus */
+          font-size: 16px; 
           outline: none;
           transition: all 0.2s ease;
+          appearance: none;
         }
         .paypaxa-input::placeholder { color: #475569; }
         .paypaxa-input:focus, .paypaxa-input-group:focus-within {
@@ -215,12 +226,14 @@ export default function RegisterPage() {
           background: transparent;
           color: #F8FAFC;
           padding: 14px 16px;
-          font-size: 15px;
+          /* CRITICAL: Must be 16px to prevent iOS Safari auto-zoom on focus */
+          font-size: 16px; 
           outline: none;
+          appearance: none;
         }
         .paypaxa-input-group input {
           flex: 1;
-          min-width: 0; /* Critical for Safari to stop input pushing past container */
+          min-width: 0; 
         }
         .paypaxa-btn {
           width: 100%;
