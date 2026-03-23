@@ -19,6 +19,21 @@ export default function RegisterPage() {
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
 
+  // Dynamic Password Strength Calculator
+  const calculateStrength = (pass: string) => {
+    let score = 0;
+    if (!pass) return score;
+    if (pass.length >= 8) score += 1; // Base length
+    if (/[A-Z]/.test(pass)) score += 1; // Has uppercase
+    if (/[0-9]/.test(pass)) score += 1; // Has number
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1; // Has special character
+    return score; 
+  };
+
+  const strengthScore = calculateStrength(formData.password);
+  const strengthColors = ['#1E293B', '#EF4444', '#F59E0B', '#3B82F6', '#22C55E']; // Default, Red, Yellow, Blue, Green
+  const strengthLabels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,6 +41,12 @@ export default function RegisterPage() {
 
     if (formData.password !== formData.confirmPassword) {
       setStatus({ type: 'error', message: 'Passwords do not match.' });
+      setLoading(false);
+      return;
+    }
+
+    if (strengthScore < 2) {
+      setStatus({ type: 'error', message: 'Please choose a stronger password.' });
       setLoading(false);
       return;
     }
@@ -58,13 +79,22 @@ export default function RegisterPage() {
 
   return (
     <>
-      {/* Custom CSS for mobile responsiveness and premium hover/focus states. 
-        This guarantees "International Standard" UI without needing Tailwind.
+      {/* Custom CSS for mobile stability and premium hover/focus states. 
+        Added global overflow-x: hidden and strict box-sizing to fix mobile "shaking".
       */}
       <style dangerouslySetInnerHTML={{__html: `
-        body { margin: 0; background-color: #060B19; }
+        body { 
+          margin: 0; 
+          background-color: #060B19; 
+          overflow-x: hidden; 
+          width: 100%;
+        }
+        * {
+          box-sizing: border-box;
+        }
         .paypaxa-container {
           min-height: 100vh;
+          width: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -80,7 +110,7 @@ export default function RegisterPage() {
           border-radius: 16px;
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
           padding: 3rem;
-          box-sizing: border-box;
+          margin: 0 auto;
         }
         .paypaxa-grid {
           display: grid;
@@ -95,7 +125,6 @@ export default function RegisterPage() {
           background-color: #060B19;
           color: #F8FAFC;
           font-size: 15px;
-          box-sizing: border-box;
           outline: none;
           transition: all 0.2s ease;
         }
@@ -144,9 +173,9 @@ export default function RegisterPage() {
         .selection-card:hover {
           border-color: #475569 !important;
         }
-        /* Mobile Optimization */
+        /* Mobile Optimization overrides */
         @media (max-width: 640px) {
-          .paypaxa-card { padding: 2rem 1.5rem; }
+          .paypaxa-card { padding: 2rem 1.25rem; }
           .paypaxa-grid { grid-template-columns: 1fr; gap: 1rem; }
         }
       `}} />
@@ -154,7 +183,6 @@ export default function RegisterPage() {
       <div className="paypaxa-container">
         <div className="paypaxa-card">
           
-          {/* Premium SVG Logo Placeholder */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -195,25 +223,25 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label className="paypaxa-label">Business Name</label>
-                <input type="text" required className="paypaxa-input" placeholder="e.g. Quadrox Tech" value={formData.businessName} onChange={(e) => setFormData({...formData, businessName: e.target.value})} />
+                <input type="text" required className="paypaxa-input" placeholder="e.g. Acme Corp" value={formData.businessName} onChange={(e) => setFormData({...formData, businessName: e.target.value})} />
               </div>
             </div>
 
             <div className="paypaxa-grid">
               <div>
                 <label className="paypaxa-label">First Name</label>
-                <input type="text" required className="paypaxa-input" placeholder="Mukhtar" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
+                <input type="text" required className="paypaxa-input" placeholder="Jane" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
               </div>
               <div>
                 <label className="paypaxa-label">Last Name</label>
-                <input type="text" required className="paypaxa-input" placeholder="Abdulwaheed" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
+                <input type="text" required className="paypaxa-input" placeholder="Doe" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
               </div>
             </div>
 
             <div className="paypaxa-grid">
               <div>
                 <label className="paypaxa-label">Work Email</label>
-                <input type="email" required className="paypaxa-input" placeholder="dev@quadroxtech.cloud" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                <input type="email" required className="paypaxa-input" placeholder="jane@example.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
               <div>
                 <label className="paypaxa-label">Phone Number</label>
@@ -225,7 +253,24 @@ export default function RegisterPage() {
               <div>
                 <label className="paypaxa-label">Secure Password</label>
                 <input type="password" required minLength={8} className="paypaxa-input" placeholder="••••••••" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
+                
+                {/* Real-time Password Health Checker */}
+                <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                  {[1, 2, 3, 4].map(level => (
+                    <div key={level} style={{
+                      height: '4px', flex: 1, borderRadius: '2px',
+                      backgroundColor: strengthScore >= level ? strengthColors[strengthScore] : '#1E293B',
+                      transition: 'background-color 0.3s ease'
+                    }}></div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '500', color: strengthScore > 0 ? strengthColors[strengthScore] : '#64748B', transition: 'color 0.3s ease' }}>
+                    {strengthScore > 0 ? strengthLabels[strengthScore] : 'Minimum 8 characters'}
+                  </span>
+                </div>
               </div>
+
               <div>
                 <label className="paypaxa-label">Confirm Password</label>
                 <input type="password" required minLength={8} className="paypaxa-input" placeholder="••••••••" value={formData.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} />
