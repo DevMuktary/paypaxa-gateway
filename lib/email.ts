@@ -90,7 +90,7 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
     const client = new SendMailClient({ url, token: apiToken });
     
     // Fallback to your Railway domain if NEXT_PUBLIC_BASE_URL isn't set yet
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa-production.up.railway.app';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa.com';
     const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
     const htmlContent = wrapEmail(`
