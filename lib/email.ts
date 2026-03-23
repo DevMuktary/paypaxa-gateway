@@ -1,3 +1,4 @@
+// @ts-ignore - ZeptoMail does not provide official TypeScript types
 import { SendMailClient } from "zeptomail";
 
 // --- CONFIGURATION ---
