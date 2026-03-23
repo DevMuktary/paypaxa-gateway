@@ -11,8 +11,12 @@ model User {
   id                 String    @id @default(uuid())
   merchantId         String?   @unique
   merchant           Merchant? @relation(fields: [merchantId], references: [id])
+  firstName          String
+  lastName           String
   email              String    @unique
+  phoneNumber        String
   passwordHash       String
+  isDeveloper        Boolean   @default(false)
   isEmailVerified    Boolean   @default(false)
   verificationToken  String?
   verificationExpiry DateTime?
@@ -25,6 +29,8 @@ model User {
 model Merchant {
   id           String   @id @default(uuid())
   businessName String
+  country      String   @default("Nigeria")
+  businessType String   @default("STARTER") // "STARTER" or "REGISTERED"
   kycTier      Int      @default(1)
   apiPublicKey String   @unique
   apiSecretKey String   @unique
