@@ -31,6 +31,7 @@ export default function RegisterPage() {
   
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false); // NEW STATE FOR SUCCESS UI
 
   const countryCodes: Record<string, string> = {
     'Nigeria': '+234',
@@ -122,13 +123,11 @@ export default function RegisterPage() {
 
       if (!response.ok) throw new Error(data.error || 'Registration failed');
 
-      setStatus({ type: 'success', message: data.message });
-      setFormData({ country: 'Nigeria', businessName: '', firstName: '', lastName: '', email: '', password: '', confirmPassword: '', businessType: 'STARTER', isDeveloper: 'no' });
-      setPhoneDigits('');
-      setEmailValid(null);
+      // Trigger the success UI
+      setIsRegistered(true);
+
     } catch (error: any) {
       setStatus({ type: 'error', message: error.message });
-    } finally {
       setLoading(false);
     }
   };
@@ -224,10 +223,7 @@ export default function RegisterPage() {
           outline: none;
           appearance: none;
         }
-        .paypaxa-input-group input {
-          flex: 1;
-          min-width: 0; 
-        }
+        .paypaxa-input-group input { flex: 1; min-width: 0; }
         .paypaxa-btn {
           width: 100%;
           padding: 16px;
@@ -240,6 +236,7 @@ export default function RegisterPage() {
           cursor: pointer;
           transition: background-color 0.2s;
           margin-top: 1rem;
+          text-align: center;
         }
         .paypaxa-btn:hover:not(:disabled) { background-color: #1D4ED8; }
         .paypaxa-btn:disabled { background-color: #1E293B; color: #64748B; cursor: not-allowed; }
@@ -259,7 +256,6 @@ export default function RegisterPage() {
           background-color: #060B19;
         }
         .selection-card:hover { border-color: #475569 !important; }
-        
         @media (max-width: 640px) {
           .paypaxa-card { padding: 2rem 1.25rem; }
           .paypaxa-grid { grid-template-columns: 1fr; gap: 1rem; }
@@ -267,215 +263,244 @@ export default function RegisterPage() {
       `}} />
 
       <div className="viewport-wrapper">
-        <div className="paypaxa-card">
+        
+        {/* SUCCESS UI: Shows only when registration is complete */}
+        {isRegistered ? (
+          <div className="paypaxa-card" style={{ textAlign: 'center', padding: '4rem 2rem', maxWidth: '480px' }}>
+             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+               <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+               </div>
+             </div>
+             
+             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#F8FAFC', marginBottom: '16px' }}>Check your inbox</h2>
+             
+             <p style={{ color: '#94A3B8', fontSize: '15px', lineHeight: '1.6', marginBottom: '32px' }}>
+                We've sent a verification link to <strong style={{ color: '#E2E8F0' }}>{formData.email}</strong>.<br/>Please verify your email address to activate your account.
+             </p>
+             
+             <a href="/login" className="paypaxa-btn" style={{ textDecoration: 'none', display: 'inline-block', width: '100%' }}>
+               Continue to Login
+             </a>
+             
+             <div style={{ marginTop: '24px', fontSize: '13px', color: '#64748B' }}>
+                Didn't receive the email? Check your spam folder.
+             </div>
+          </div>
+        ) : (
           
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {/* Removed the inline onError handler to fix Next.js build crash */}
-              <img src="/logo.png" alt="PAYPAXA Logo" style={{ height: '36px', width: 'auto', borderRadius: '4px' }} />
-              <span style={{ fontSize: '24px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px' }}>PAYPAXA</span>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#F8FAFC', margin: '0 0 8px 0' }}>
-              Create your gateway account
-            </h1>
-            <p style={{ color: '#94A3B8', fontSize: '15px', margin: 0 }}>
-              Join modern businesses processing payments securely.
-            </p>
-          </div>
-
-          {status.message && (
-            <div style={{ padding: '14px 16px', marginBottom: '24px', borderRadius: '8px', backgroundColor: status.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)', color: status.type === 'error' ? '#FCA5A5' : '#86EFAC', border: `1px solid ${status.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`, fontSize: '14px' }}>
-              {status.message}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            <div className="paypaxa-grid">
-              <div>
-                <label className="paypaxa-label">Country</label>
-                <select className="paypaxa-input" value={formData.country} onChange={handleCountryChange}>
-                  <option value="Nigeria">Nigeria</option>
-                  <option value="Ghana">Ghana</option>
-                  <option value="Kenya">Kenya</option>
-                  <option value="South Africa">South Africa</option>
-                  <option value="Other">Other Countries</option>
-                </select>
-              </div>
-              <div>
-                <label className="paypaxa-label">Business Name</label>
-                <input type="text" required className="paypaxa-input" placeholder="e.g. Acme Corp" value={formData.businessName} onChange={(e) => setFormData({...formData, businessName: e.target.value})} />
+          /* ORIGINAL FORM UI */
+          <div className="paypaxa-card">
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img src="/logo.png" alt="PAYPAXA Logo" style={{ height: '36px', width: 'auto', borderRadius: '4px' }} />
+                <span style={{ fontSize: '24px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px' }}>PAYPAXA</span>
               </div>
             </div>
 
-            <div className="paypaxa-grid">
-              <div>
-                <label className="paypaxa-label">First Name</label>
-                <input type="text" required className="paypaxa-input" placeholder="Jane" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
-              </div>
-              <div>
-                <label className="paypaxa-label">Last Name</label>
-                <input type="text" required className="paypaxa-input" placeholder="Doe" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
-              </div>
+            <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#F8FAFC', margin: '0 0 8px 0' }}>
+                Create your gateway account
+              </h1>
+              <p style={{ color: '#94A3B8', fontSize: '15px', margin: 0 }}>
+                Join modern businesses processing payments securely.
+              </p>
             </div>
 
-            <div className="paypaxa-grid">
-              <div>
-                <label className="paypaxa-label">
-                  <span>Work Email</span>
-                  {emailValid === true && <span style={{ color: '#22C55E' }}>✓ Valid</span>}
-                  {emailValid === false && <span style={{ color: '#EF4444' }}>Invalid format</span>}
-                </label>
-                <input type="email" required className="paypaxa-input" placeholder="name@company.com" value={formData.email} onChange={handleEmailChange} style={{ borderColor: emailValid === false ? '#EF4444' : '' }} />
+            {status.message && (
+              <div style={{ padding: '14px 16px', marginBottom: '24px', borderRadius: '8px', backgroundColor: status.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)', color: status.type === 'error' ? '#FCA5A5' : '#86EFAC', border: `1px solid ${status.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`, fontSize: '14px' }}>
+                {status.message}
               </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
-              <div>
-                <label className="paypaxa-label">Phone Number</label>
-                <div className="paypaxa-input-group">
-                  <select 
-                    value={phoneCode} 
-                    onChange={(e) => setPhoneCode(e.target.value)}
-                    style={{ borderRight: '1px solid #1E293B', paddingRight: '4px', width: '90px', color: '#94A3B8' }}
-                  >
-                    <option value="+234">+234</option>
-                    <option value="+233">+233</option>
-                    <option value="+254">+254</option>
-                    <option value="+27">+27</option>
+              <div className="paypaxa-grid">
+                <div>
+                  <label className="paypaxa-label">Country</label>
+                  <select className="paypaxa-input" value={formData.country} onChange={handleCountryChange}>
+                    <option value="Nigeria">Nigeria</option>
+                    <option value="Ghana">Ghana</option>
+                    <option value="Kenya">Kenya</option>
+                    <option value="South Africa">South Africa</option>
+                    <option value="Other">Other Countries</option>
                   </select>
-                  <input 
-                    type="tel" 
-                    required 
-                    placeholder="801 234 5678" 
-                    value={phoneDigits} 
-                    onChange={handlePhoneChange} 
-                  />
+                </div>
+                <div>
+                  <label className="paypaxa-label">Business Name</label>
+                  <input type="text" required className="paypaxa-input" placeholder="e.g. Acme Corp" value={formData.businessName} onChange={(e) => setFormData({...formData, businessName: e.target.value})} />
                 </div>
               </div>
-            </div>
 
-            <div className="paypaxa-grid">
-              <div>
-                <label className="paypaxa-label">Secure Password</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    required minLength={8} 
-                    className="paypaxa-input" 
-                    placeholder="••••••••" 
-                    value={formData.password} 
-                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                    style={{ paddingRight: '40px' }}
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                  >
-                    {showPassword ? <EyeOpen /> : <EyeClosed />}
-                  </button>
+              <div className="paypaxa-grid">
+                <div>
+                  <label className="paypaxa-label">First Name</label>
+                  <input type="text" required className="paypaxa-input" placeholder="Jane" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
+                </div>
+                <div>
+                  <label className="paypaxa-label">Last Name</label>
+                  <input type="text" required className="paypaxa-input" placeholder="Doe" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="paypaxa-grid">
+                <div>
+                  <label className="paypaxa-label">
+                    <span>Work Email</span>
+                    {emailValid === true && <span style={{ color: '#22C55E' }}>✓ Valid</span>}
+                    {emailValid === false && <span style={{ color: '#EF4444' }}>Invalid format</span>}
+                  </label>
+                  <input type="email" required className="paypaxa-input" placeholder="name@company.com" value={formData.email} onChange={handleEmailChange} style={{ borderColor: emailValid === false ? '#EF4444' : '' }} />
                 </div>
                 
-                <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
-                  {[1, 2, 3, 4].map(level => (
-                    <div key={level} style={{
-                      height: '4px', flex: 1, borderRadius: '2px',
-                      backgroundColor: strengthScore >= level ? strengthColors[strengthScore] : '#1E293B',
-                      transition: 'background-color 0.3s ease'
-                    }}></div>
-                  ))}
+                <div>
+                  <label className="paypaxa-label">Phone Number</label>
+                  <div className="paypaxa-input-group">
+                    <select 
+                      value={phoneCode} 
+                      onChange={(e) => setPhoneCode(e.target.value)}
+                      style={{ borderRight: '1px solid #1E293B', paddingRight: '4px', width: '90px', color: '#94A3B8' }}
+                    >
+                      <option value="+234">+234</option>
+                      <option value="+233">+233</option>
+                      <option value="+254">+254</option>
+                      <option value="+27">+27</option>
+                    </select>
+                    <input 
+                      type="tel" 
+                      required 
+                      placeholder="801 234 5678" 
+                      value={phoneDigits} 
+                      onChange={handlePhoneChange} 
+                    />
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '500', color: strengthScore > 0 ? strengthColors[strengthScore] : '#64748B' }}>
-                    {strengthScore > 0 ? strengthLabels[strengthScore] : 'Minimum 8 characters'}
-                  </span>
+              </div>
+
+              <div className="paypaxa-grid">
+                <div>
+                  <label className="paypaxa-label">Secure Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required minLength={8} 
+                      className="paypaxa-input" 
+                      placeholder="••••••••" 
+                      value={formData.password} 
+                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                    >
+                      {showPassword ? <EyeOpen /> : <EyeClosed />}
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                    {[1, 2, 3, 4].map(level => (
+                      <div key={level} style={{
+                        height: '4px', flex: 1, borderRadius: '2px',
+                        backgroundColor: strengthScore >= level ? strengthColors[strengthScore] : '#1E293B',
+                        transition: 'background-color 0.3s ease'
+                      }}></div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '500', color: strengthScore > 0 ? strengthColors[strengthScore] : '#64748B' }}>
+                      {strengthScore > 0 ? strengthLabels[strengthScore] : 'Minimum 8 characters'}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="paypaxa-label">Confirm Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      required minLength={8} 
+                      className="paypaxa-input" 
+                      placeholder="••••••••" 
+                      value={formData.confirmPassword} 
+                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                    >
+                      {showConfirmPassword ? <EyeOpen /> : <EyeClosed />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="paypaxa-label">Confirm Password</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type={showConfirmPassword ? "text" : "password"} 
-                    required minLength={8} 
-                    className="paypaxa-input" 
-                    placeholder="••••••••" 
-                    value={formData.confirmPassword} 
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
-                    style={{ paddingRight: '40px' }}
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                <label className="paypaxa-label" style={{ marginBottom: '12px' }}>What type of business do you own?</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  
+                  <div 
+                    className="selection-card"
+                    onClick={() => setFormData({...formData, businessType: 'STARTER'})}
+                    style={{ border: `2px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: formData.businessType === 'STARTER' ? 'rgba(59, 130, 246, 0.05)' : '#060B19' }}
                   >
-                    {showConfirmPassword ? <EyeOpen /> : <EyeClosed />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="paypaxa-label" style={{ marginBottom: '12px' }}>What type of business do you own?</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                
-                <div 
-                  className="selection-card"
-                  onClick={() => setFormData({...formData, businessType: 'STARTER'})}
-                  style={{ border: `2px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: formData.businessType === 'STARTER' ? 'rgba(59, 130, 246, 0.05)' : '#060B19' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19' }}></div>
-                    <strong style={{ color: '#F8FAFC', fontSize: '15px' }}>Starter Business</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'STARTER' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19' }}></div>
+                      <strong style={{ color: '#F8FAFC', fontSize: '15px' }}>Starter Business</strong>
+                    </div>
+                    <p style={{ margin: '6px 0 0 30px', fontSize: '13px', color: '#94A3B8', lineHeight: '1.5' }}>
+                      I'm testing my ideas with real customers, and preparing to register my company.
+                    </p>
                   </div>
-                  <p style={{ margin: '6px 0 0 30px', fontSize: '13px', color: '#94A3B8', lineHeight: '1.5' }}>
-                    I'm testing my ideas with real customers, and preparing to register my company.
-                  </p>
-                </div>
 
-                <div 
-                  className="selection-card"
-                  onClick={() => setFormData({...formData, businessType: 'REGISTERED'})}
-                  style={{ border: `2px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: formData.businessType === 'REGISTERED' ? 'rgba(59, 130, 246, 0.05)' : '#060B19' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19' }}></div>
-                    <strong style={{ color: '#F8FAFC', fontSize: '15px' }}>Registered Business</strong>
+                  <div 
+                    className="selection-card"
+                    onClick={() => setFormData({...formData, businessType: 'REGISTERED'})}
+                    style={{ border: `2px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: formData.businessType === 'REGISTERED' ? 'rgba(59, 130, 246, 0.05)' : '#060B19' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `5px solid ${formData.businessType === 'REGISTERED' ? '#3B82F6' : '#1E293B'}`, backgroundColor: '#060B19' }}></div>
+                      <strong style={{ color: '#F8FAFC', fontSize: '15px' }}>Registered Business</strong>
+                    </div>
+                    <p style={{ margin: '6px 0 0 30px', fontSize: '13px', color: '#94A3B8', lineHeight: '1.5' }}>
+                      My business has the approval, documentation, and licences required to operate legally.
+                    </p>
                   </div>
-                  <p style={{ margin: '6px 0 0 30px', fontSize: '13px', color: '#94A3B8', lineHeight: '1.5' }}>
-                    My business has the approval, documentation, and licences required to operate legally.
-                  </p>
+
                 </div>
-
               </div>
-            </div>
 
-            <div>
-              <label className="paypaxa-label">Are you a software developer?</label>
-              <div style={{ display: 'flex', gap: '1.5rem', marginTop: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#E2E8F0', cursor: 'pointer' }}>
-                  <input type="radio" name="developer" checked={formData.isDeveloper === 'yes'} onChange={() => setFormData({...formData, isDeveloper: 'yes'})} style={{ cursor: 'pointer', accentColor: '#3B82F6' }} />
-                  Yes, I am
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#E2E8F0', cursor: 'pointer' }}>
-                  <input type="radio" name="developer" checked={formData.isDeveloper === 'no'} onChange={() => setFormData({...formData, isDeveloper: 'no'})} style={{ cursor: 'pointer', accentColor: '#3B82F6' }} />
-                  No, I'm not
-                </label>
+              <div>
+                <label className="paypaxa-label">Are you a software developer?</label>
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#E2E8F0', cursor: 'pointer' }}>
+                    <input type="radio" name="developer" checked={formData.isDeveloper === 'yes'} onChange={() => setFormData({...formData, isDeveloper: 'yes'})} style={{ cursor: 'pointer', accentColor: '#3B82F6' }} />
+                    Yes, I am
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#E2E8F0', cursor: 'pointer' }}>
+                    <input type="radio" name="developer" checked={formData.isDeveloper === 'no'} onChange={() => setFormData({...formData, isDeveloper: 'no'})} style={{ cursor: 'pointer', accentColor: '#3B82F6' }} />
+                    No, I'm not
+                  </label>
+                </div>
               </div>
-            </div>
 
-            <button type="submit" disabled={loading} className="paypaxa-btn">
-              {loading ? 'Creating account...' : 'Create my account'}
-            </button>
+              <button type="submit" disabled={loading} className="paypaxa-btn">
+                {loading ? 'Creating account...' : 'Create my account'}
+              </button>
 
-            <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748B', marginTop: '0.5rem', lineHeight: '1.6' }}>
-              By clicking "Create my account", you agree to PAYPAXA's Terms of Use.<br />
-              Already have an account? <a href="/login" style={{ color: '#3B82F6', textDecoration: 'none', fontWeight: '600' }}>Sign in</a>
-            </div>
-          </form>
-        </div>
+              <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748B', marginTop: '0.5rem', lineHeight: '1.6' }}>
+                By clicking "Create my account", you agree to PAYPAXA's Terms of Use.<br />
+                Already have an account? <a href="/login" style={{ color: '#3B82F6', textDecoration: 'none', fontWeight: '600' }}>Sign in</a>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </>
   );
