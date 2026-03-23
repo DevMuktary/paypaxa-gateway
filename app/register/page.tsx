@@ -30,8 +30,10 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [status, setStatus] = useState({ type: '', message: '' });
+  
+  // UI Flow States
   const [loading, setLoading] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false); // NEW STATE FOR SUCCESS UI
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const countryCodes: Record<string, string> = {
     'Nigeria': '+234',
@@ -123,7 +125,8 @@ export default function RegisterPage() {
 
       if (!response.ok) throw new Error(data.error || 'Registration failed');
 
-      // Trigger the success UI
+      // Stop loading, show success screen
+      setLoading(false);
       setIsRegistered(true);
 
     } catch (error: any) {
@@ -146,125 +149,73 @@ export default function RegisterPage() {
     </svg>
   );
 
+  // --- STATE 2: THE LOADING OVERLAY ---
+  if (loading) {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{__html: `
+          html, body { margin: 0; padding: 0; background-color: #060B19; width: 100%; height: 100%; overflow: hidden; }
+          @keyframes subtle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.97); }
+          }
+        `}} />
+        <div style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#060B19' }}>
+          <div style={{ animation: 'subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/logo.png" alt="PAYPAXA Loading" style={{ height: '64px', width: 'auto' }} />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // --- MAIN RENDER (STATES 1 & 3) ---
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
         html, body { 
-          margin: 0; 
-          padding: 0;
-          background-color: #060B19; 
-          width: 100%;
-          overflow-x: hidden; 
-          position: relative;
-          -webkit-overflow-scrolling: touch;
-          touch-action: pan-x pan-y; 
+          margin: 0; padding: 0; background-color: #060B19; width: 100%; overflow-x: hidden; position: relative;
+          -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; 
         }
         *, *::before, *::after { box-sizing: border-box; }
         .viewport-wrapper {
-          min-height: 100vh;
-          width: 100%;
-          overflow-x: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: system-ui, -apple-system, sans-serif;
-          padding: 2rem 1rem;
+          min-height: 100vh; width: 100%; overflow-x: hidden; display: flex; alignItems: center; justifyContent: center;
+          font-family: system-ui, -apple-system, sans-serif; padding: 2rem 1rem;
           background: radial-gradient(circle at top right, #0A1635 0%, #060B19 100%);
         }
         .paypaxa-card {
-          max-width: 640px;
-          width: 100%;
-          background-color: #0E1629;
-          border: 1px solid #1A2642;
-          border-radius: 16px;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-          padding: 3rem;
-          margin: 0 auto;
+          max-width: 640px; width: 100%; background-color: #0E1629; border: 1px solid #1A2642; border-radius: 16px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 3rem; margin: 0 auto;
         }
-        .paypaxa-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.25rem;
-          width: 100%;
-        }
+        .paypaxa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; width: 100%; }
         .paypaxa-input {
-          width: 100%;
-          padding: 14px 16px;
-          border-radius: 8px;
-          border: 1px solid #1E293B;
-          background-color: #060B19;
-          color: #F8FAFC;
-          font-size: 16px; 
-          outline: none;
-          transition: all 0.2s ease;
-          appearance: none;
+          width: 100%; padding: 14px 16px; border-radius: 8px; border: 1px solid #1E293B; background-color: #060B19; color: #F8FAFC;
+          font-size: 16px; outline: none; transition: all 0.2s ease; appearance: none;
         }
         .paypaxa-input::placeholder { color: #475569; }
-        .paypaxa-input:focus, .paypaxa-input-group:focus-within {
-          border-color: #3B82F6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
+        .paypaxa-input:focus, .paypaxa-input-group:focus-within { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
         .paypaxa-input-group {
-          display: flex;
-          align-items: center;
-          border-radius: 8px;
-          border: 1px solid #1E293B;
-          background-color: #060B19;
-          transition: all 0.2s ease;
-          overflow: hidden;
-          width: 100%;
+          display: flex; align-items: center; border-radius: 8px; border: 1px solid #1E293B; background-color: #060B19;
+          transition: all 0.2s ease; overflow: hidden; width: 100%;
         }
         .paypaxa-input-group select, .paypaxa-input-group input {
-          border: none;
-          background: transparent;
-          color: #F8FAFC;
-          padding: 14px 16px;
-          font-size: 16px; 
-          outline: none;
-          appearance: none;
+          border: none; background: transparent; color: #F8FAFC; padding: 14px 16px; font-size: 16px; outline: none; appearance: none;
         }
         .paypaxa-input-group input { flex: 1; min-width: 0; }
         .paypaxa-btn {
-          width: 100%;
-          padding: 16px;
-          background-color: #2563EB;
-          color: #FFFFFF;
-          border: none;
-          border-radius: 8px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background-color 0.2s;
-          margin-top: 1rem;
-          text-align: center;
+          width: 100%; padding: 16px; background-color: #2563EB; color: #FFFFFF; border: none; border-radius: 8px;
+          font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; margin-top: 1rem; text-align: center;
         }
         .paypaxa-btn:hover:not(:disabled) { background-color: #1D4ED8; }
-        .paypaxa-btn:disabled { background-color: #1E293B; color: #64748B; cursor: not-allowed; }
-        .paypaxa-label {
-          display: flex;
-          justify-content: space-between;
-          font-size: 14px;
-          margin-bottom: 8px;
-          font-weight: 500;
-          color: #94A3B8;
-        }
-        .selection-card {
-          padding: 16px;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.2s;
-          background-color: #060B19;
-        }
+        .paypaxa-label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; font-weight: 500; color: #94A3B8; }
+        .selection-card { padding: 16px; border-radius: 10px; cursor: pointer; transition: all 0.2s; background-color: #060B19; }
         .selection-card:hover { border-color: #475569 !important; }
-        @media (max-width: 640px) {
-          .paypaxa-card { padding: 2rem 1.25rem; }
-          .paypaxa-grid { grid-template-columns: 1fr; gap: 1rem; }
-        }
+        @media (max-width: 640px) { .paypaxa-card { padding: 2rem 1.25rem; } .paypaxa-grid { grid-template-columns: 1fr; gap: 1rem; } }
       `}} />
 
       <div className="viewport-wrapper">
         
-        {/* SUCCESS UI: Shows only when registration is complete */}
+        {/* --- STATE 3: SUCCESS UI --- */}
         {isRegistered ? (
           <div className="paypaxa-card" style={{ textAlign: 'center', padding: '4rem 2rem', maxWidth: '480px' }}>
              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
@@ -282,7 +233,7 @@ export default function RegisterPage() {
                 We've sent a verification link to <strong style={{ color: '#E2E8F0' }}>{formData.email}</strong>.<br/>Please verify your email address to activate your account.
              </p>
              
-             <a href="/login" className="paypaxa-btn" style={{ textDecoration: 'none', display: 'inline-block', width: '100%' }}>
+             <a href="/login" className="paypaxa-btn" style={{ textDecoration: 'none', display: 'inline-block', width: '100%', boxSizing: 'border-box' }}>
                Continue to Login
              </a>
              
@@ -292,7 +243,7 @@ export default function RegisterPage() {
           </div>
         ) : (
           
-          /* ORIGINAL FORM UI */
+          /* --- STATE 1: FORM UI --- */
           <div className="paypaxa-card">
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -490,8 +441,8 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <button type="submit" disabled={loading} className="paypaxa-btn">
-                {loading ? 'Creating account...' : 'Create my account'}
+              <button type="submit" className="paypaxa-btn">
+                Create my account
               </button>
 
               <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748B', marginTop: '0.5rem', lineHeight: '1.6' }}>
