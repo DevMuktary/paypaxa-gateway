@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-// Next.js viewport export to strictly disable pinch-to-zoom at the document level
 import type { Viewport } from 'next';
 
-// This is the magic lock for mobile browsers
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -160,12 +158,9 @@ export default function RegisterPage() {
           overflow-x: hidden; 
           position: relative;
           -webkit-overflow-scrolling: touch;
-          /* Kills manual pinch zoom gestures in CSS */
           touch-action: pan-x pan-y; 
         }
-        *, *::before, *::after { 
-          box-sizing: border-box; 
-        }
+        *, *::before, *::after { box-sizing: border-box; }
         .viewport-wrapper {
           min-height: 100vh;
           width: 100%;
@@ -200,7 +195,6 @@ export default function RegisterPage() {
           border: 1px solid #1E293B;
           background-color: #060B19;
           color: #F8FAFC;
-          /* CRITICAL: Must be 16px to prevent iOS Safari auto-zoom on focus */
           font-size: 16px; 
           outline: none;
           transition: all 0.2s ease;
@@ -226,7 +220,6 @@ export default function RegisterPage() {
           background: transparent;
           color: #F8FAFC;
           padding: 14px 16px;
-          /* CRITICAL: Must be 16px to prevent iOS Safari auto-zoom on focus */
           font-size: 16px; 
           outline: none;
           appearance: none;
@@ -482,7 +475,7 @@ export default function RegisterPage() {
             </div>
 
             <button type="submit" disabled={loading} className="paypaxa-btn">
-              {loading ? 'Securing workspace...' : 'Create my account'}
+              {loading ? 'Creating account...' : 'Create my account'}
             </button>
 
             <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748B', marginTop: '0.5rem', lineHeight: '1.6' }}>
