@@ -2,13 +2,11 @@
 import { SendMailClient } from "zeptomail";
 
 // --- CONFIGURATION ---
-// IMPORTANT: This MUST match the exact email address you verified in ZeptoMail!
 const SENDER_EMAIL = "hello@paypaxa.com"; 
 const SENDER_NAME = "PAYPAXA Security";
 
-// The address where failed delivery notifications will be sent. 
-// Usually, you can use the same verified email as your SENDER_EMAIL.
-const BOUNCE_EMAIL = "hello@paypaxa.com"; 
+// The bounce address MUST be a full email format using your verified bounce domain
+const BOUNCE_EMAIL = "bounce@bounce-zem.paypaxa.com"; 
 
 // --- HTML TEMPLATE WRAPPER ---
 const wrapEmail = (content: string) => `
@@ -69,7 +67,7 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
     `);
 
     const response = await client.sendMail({
-      bounce_address: BOUNCE_EMAIL, // <-- This explicitly fixes the empty bounce address error
+      bounce_address: BOUNCE_EMAIL, 
       from: { address: SENDER_EMAIL, name: SENDER_NAME },
       to: [{ email_address: { address: recipientEmail } }],
       subject: "Verify your PAYPAXA Account",
