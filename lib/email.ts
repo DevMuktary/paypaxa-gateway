@@ -1,12 +1,17 @@
 export async function sendVerificationEmail(recipientEmail: string, token: string) {
   const zeptoMailApiKey = process.env.ZEPTOMAIL_API_KEY;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://your-railway-domain.railway.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com';
   
+  if (!zeptoMailApiKey) {
+    console.error("CRITICAL: ZEPTOMAIL_API_KEY is missing from environment variables.");
+    return false;
+  }
+
   const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
   const emailData = {
     from: { 
-      address: "no-reply@paypaxa.com", 
+      address: "no-reply@paypaxa.com", // Ensure this EXACT email is verified in ZeptoMail!
       name: "PAYPAXA Security" 
     },
     to: [
@@ -39,12 +44,14 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("ZeptoMail API Error Details:", errorText);
       throw new Error("Failed to send email via ZeptoMail");
     }
     
     return true;
   } catch (error) {
-    console.error("Email sending error:", error);
+    console.error("Email sending exception:", error);
     return false;
   }
 }
