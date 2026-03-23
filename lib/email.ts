@@ -6,7 +6,7 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
 
   const emailData = {
     from: { 
-      address: "dev@quadroxtech.cloud", 
+      address: "no-reply@paypaxa.com", 
       name: "PAYPAXA Security" 
     },
     to: [
