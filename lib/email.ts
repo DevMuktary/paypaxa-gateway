@@ -1,57 +1,80 @@
+import { SendMailClient } from "zeptomail";
+
+// --- CONFIGURATION ---
+// IMPORTANT: This MUST match the exact email address you verified in ZeptoMail!
+const SENDER_EMAIL = "hello@paypaxa.com"; 
+const SENDER_NAME = "PAYPAXA Security";
+
+// --- HTML TEMPLATE WRAPPER ---
+const wrapEmail = (content: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: 'system-ui', -apple-system, sans-serif; background-color: #F3F4F6; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 40px auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; }
+  .header { background: #060B19; padding: 30px; text-align: center; }
+  .logo { color: #FFFFFF; font-size: 24px; font-weight: 800; text-decoration: none; letter-spacing: 1px; }
+  .content { padding: 40px 30px; color: #334155; line-height: 1.6; font-size: 16px; }
+  .btn { display: inline-block; background: #2563EB; color: #FFFFFF; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 24px; transition: background 0.2s; }
+  .footer { background: #F8FAFC; padding: 20px; text-align: center; font-size: 13px; color: #64748B; border-top: 1px solid #E2E8F0; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">PAYPAXA</div>
+    </div>
+    <div class="content">
+      ${content}
+    </div>
+    <div class="footer">
+      &copy; ${new Date().getFullYear()} PAYPAXA. All rights reserved.<br>
+      Secure Payment Infrastructure.
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+// --- SEND FUNCTION ---
 export async function sendVerificationEmail(recipientEmail: string, token: string) {
-  const zeptoMailApiKey = process.env.ZEPTOMAIL_API_KEY;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com';
-  
-  if (!zeptoMailApiKey) {
-    console.error("CRITICAL: ZEPTOMAIL_API_KEY is missing from environment variables.");
-    return false;
-  }
-
-  const verificationLink = `${baseUrl}/verify-email?token=${token}`;
-
-  const emailData = {
-    from: { 
-      address: "no-reply@paypaxa.com", // Ensure this EXACT email is verified in ZeptoMail!
-      name: "PAYPAXA Security" 
-    },
-    to: [
-      { 
-        email_address: { 
-          address: recipientEmail 
-        } 
-      }
-    ],
-    subject: "Verify your PAYPAXA Account",
-    htmlbody: `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Welcome to PAYPAXA</h2>
-        <p>Please verify your email address to activate your merchant account and secure your transactions.</p>
-        <a href="${verificationLink}" style="display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; border-radius: 5px;">Verify Email</a>
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">If you did not request this, please ignore this email.</p>
-      </div>
-    `
-  };
-
   try {
-    const response = await fetch("https://api.zeptomail.com/v1.1/email", {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": `Zoho-enczapikey ${zeptoMailApiKey}`
-      },
-      body: JSON.stringify(emailData)
+    let url = process.env.ZEPTOMAIL_URL || "https://api.zeptomail.com/v1.1/email";
+    if (url.endsWith('/send')) url = url.replace('/send', '');
+    if (!url.startsWith('http')) url = `https://${url}`;
+
+    let apiToken = process.env.ZEPTOMAIL_API_KEY || "";
+    if (!apiToken.startsWith("Zoho-enczapikey")) {
+      apiToken = `Zoho-enczapikey ${apiToken}`;
+    }
+
+    const client = new SendMailClient({ url, token: apiToken });
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com';
+    const verificationLink = `${baseUrl}/verify-email?token=${token}`;
+
+    const htmlContent = wrapEmail(`
+      <h2 style="color: #060B19; margin-top: 0; font-size: 22px;">Verify your email</h2>
+      <p>Welcome to PAYPAXA. We are thrilled to have you on board.</p>
+      <p>Please verify your email address to activate your workspace and secure your gateway access.</p>
+      <div style="text-align: center;">
+        <a href="${verificationLink}" class="btn">Verify Email Address</a>
+      </div>
+      <p style="margin-top: 30px; font-size: 14px; color: #64748B;">If you did not create an account, you can safely ignore this email.</p>
+    `);
+
+    const response = await client.sendMail({
+      from: { address: SENDER_EMAIL, name: SENDER_NAME },
+      to: [{ email_address: { address: recipientEmail } }],
+      subject: "Verify your PAYPAXA Account",
+      htmlbody: htmlContent,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ZeptoMail API Error Details:", errorText);
-      throw new Error("Failed to send email via ZeptoMail");
-    }
-    
+    console.log("✅ ZeptoMail Sent Successfully");
     return true;
-  } catch (error) {
-    console.error("Email sending exception:", error);
+
+  } catch (error: any) {
+    console.error("❌ ZeptoMail Error:", JSON.stringify(error, null, 2));
     return false;
   }
 }
