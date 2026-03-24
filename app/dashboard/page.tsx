@@ -2,313 +2,346 @@
 
 import { useState } from 'react';
 
+// ==========================================
+// 1. ICONS (Flat, Non-AI style)
+// ==========================================
+const Icons = {
+  Overview: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>,
+  Wallet: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>,
+  Transactions: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>,
+  Customers: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
+  Reserved: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
+  Transfer: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 9l-6 6 6 6"></path><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>,
+  Settings: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51z"></path></svg>,
+  Webhook: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
+  API: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>,
+  Support: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+  Docs: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>,
+  Logout: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
+  Moon: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+  Bell: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
+  NodeGraph: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2"><circle cx="18" cy="5" r="3" fill="#3B82F6"></circle><circle cx="6" cy="12" r="3" fill="#3B82F6"></circle><circle cx="18" cy="19" r="3" fill="#3B82F6"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>,
+  PersonFlat: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="#3B82F6"></circle><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" fill="#1E3A8A"></path></svg>,
+  BriefcaseFlat: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="12" rx="2" fill="#F59E0B"></rect><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" fill="#B45309"></path></svg>,
+  MailboxFlat: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 10h16v10H4z" fill="#0EA5E9"></path><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" fill="#38BDF8"></path><rect x="18" y="6" width="4" height="6" fill="#EF4444"></rect></svg>
+};
+
+
+// ==========================================
+// 2. SIDEBAR COMPONENT
+// ==========================================
+function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (t: string) => void }) {
+  const NavItem = ({ id, label, icon: Icon, badge }: any) => (
+    <div 
+      className={`nav-item ${activeTab === id ? 'active' : ''}`} 
+      onClick={() => setActiveTab(id)}
+    >
+      <Icon /> 
+      <span style={{ flex: 1 }}>{label}</span>
+      {badge && <span className="nav-badge">{badge}</span>}
+    </div>
+  );
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <img src="https://paypaxa.com/logo.png" alt="PAYPAXA" style={{ height: '36px', width: 'auto' }} />
+        {/* If your logo doesn't have text, uncomment below */}
+        {/* <span style={{ fontSize: '22px', fontWeight: '800', color: '#D81B60' }}>PAYPAXA</span> */}
+      </div>
+      
+      <div className="sidebar-scroll">
+        <div className="nav-group">
+          <div className="nav-label">DASHBOARD</div>
+          <NavItem id="overview" label="Overview" icon={Icons.Overview} />
+          <NavItem id="wallet" label="Wallet" icon={Icons.Wallet} />
+        </div>
+
+        <div className="nav-group">
+          <div className="nav-label">COLLECTIONS</div>
+          <NavItem id="transactions" label="Transactions" icon={Icons.Transactions} />
+          <NavItem id="customers" label="Customers" icon={Icons.Customers} />
+          <NavItem id="reserved" label="Reserved Account" icon={Icons.Reserved} />
+        </div>
+
+        <div className="nav-group">
+          <div className="nav-label">DISBURSEMENTS</div>
+          <NavItem id="transfer" label="Transfer" icon={Icons.Transfer} />
+        </div>
+
+        <div className="nav-group">
+          <div className="nav-label">MERCHANT</div>
+          <NavItem id="settings" label="Settings" icon={Icons.Settings} />
+          <NavItem id="webhook" label="Webhook Event" icon={Icons.Webhook} badge="New" />
+          <NavItem id="api" label="Developer API" icon={Icons.API} />
+          <NavItem id="support" label="Support" icon={Icons.Support} />
+          <NavItem id="docs" label="Documentation" icon={Icons.Docs} />
+        </div>
+      </div>
+
+      <div className="sidebar-footer">
+        <div className="profile-box">
+          <div className="avatar">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Avatar" />
+          </div>
+          <div className="profile-info">
+            <strong>Abdulwaheed</strong>
+            <span>Smart9ja</span>
+          </div>
+          <button className="logout-btn">
+            <Icons.Logout />
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+
+// ==========================================
+// 3. SWITCH BUSINESS MODAL
+// ==========================================
+function BusinessModal({ isOpen, onClose, businesses, activeBiz, onSwitch, onAdd }: any) {
+  if (!isOpen) return null;
+  
+  // Local state to handle the simulated radio toggles
+  const [selected, setSelected] = useState(activeBiz);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ textAlign: 'center', color: '#D81B60', margin: '0 0 20px 0', fontSize: '18px' }}>Select a Business</h3>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+          {businesses.map((biz: string) => (
+            <div 
+              key={biz} 
+              className={`biz-row ${selected === biz ? 'selected' : ''}`}
+              onClick={() => setSelected(biz)}
+            >
+              <span style={{ fontWeight: '500', color: '#1F2937' }}>{biz}</span>
+              {/* CSS Toggle Switch */}
+              <div className={`toggle-switch ${selected === biz ? 'on' : 'off'}`}>
+                <div className="toggle-knob"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <button 
+            className="btn-primary" 
+            onClick={() => { onSwitch(selected); onClose(); }}
+          >
+            Switch Business
+          </button>
+          
+          {businesses.length < 3 && (
+            <button className="btn-secondary" onClick={onAdd}>
+              + Add Business
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ==========================================
+// 4. MAIN DASHBOARD PAGE
+// ==========================================
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [isBusinessMenuOpen, setIsBusinessMenuOpen] = useState(false);
-  const [activeBusiness, setActiveBusiness] = useState('Quadrox Tech');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Business State
+  const [businesses, setBusinesses] = useState(['Smart9ja', 'SmartReceipt', 'FYNAX TECHNOLOGY']);
+  const [activeBusiness, setActiveBusiness] = useState('Smart9ja');
 
-  // Multi-Business Mock Data
-  const businesses = ['Quadrox Tech', 'Haramain Stream', 'GoliveNG'];
-
-  // Mock Data for the Chart (Line Graph Simulation)
-  const chartData = [
-    { day: 'Mon', rev: '20%', txn: '15%' },
-    { day: 'Tue', rev: '45%', txn: '30%' },
-    { day: 'Wed', rev: '30%', txn: '25%' },
-    { day: 'Thu', rev: '80%', txn: '60%' },
-    { day: 'Fri', rev: '55%', txn: '40%' },
-    { day: 'Sat', rev: '95%', txn: '75%' },
-    { day: 'Sun', rev: '65%', txn: '50%' },
-  ];
-
-  // Mock Data for Transactions
-  const transactions = [
-    { id: '1f1917d753...', customer: 'DAARUL HIKMAH intl school', amount: '₦3,000.00', status: 'Paid', date: '16th of March, 2026 12:41 PM' },
-    { id: 'a7e98bf4cb...', customer: 'Abdussamad salaudeen', amount: '₦2,000.00', status: 'Paid', date: '5th of March, 2026 12:47 PM' },
-    { id: '16629e3027...', customer: 'Abdussamad salaudeen', amount: '₦2,000.00', status: 'Failed', date: '28th of February, 2026 10:41 AM' },
-    { id: 'cccf5e47bd...', customer: 'Abdussamad salaudeen', amount: '₦1,000.00', status: 'Paid', date: '25th of February, 2026 12:01 PM' },
-    { id: 'ff6ea15e13...', customer: 'Musa Ibrahim', amount: '₦15,500.00', status: 'Pending', date: '17th of February, 2026 3:35 PM' },
-  ];
-
-  // SVG Icons Toolkit
-  const Icons = {
-    Home: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>,
-    Wallet: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>,
-    Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
-    Users: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>,
-    Bank: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>,
-    Transfer: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>,
-    Settings: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51z"></path></svg>,
-    Code: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>,
-    Utility: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
-    Copy: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>,
-    ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+  const handleAddBusiness = () => {
+    alert("In a real app, this would route to an 'Add Business' form.");
+    setIsModalOpen(false);
   };
 
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
-        html, body { margin: 0; padding: 0; background-color: #060B19; font-family: system-ui, -apple-system, sans-serif; color: #F8FAFC; overflow-x: hidden; }
+        html, body { margin: 0; padding: 0; background-color: #F9FAFB; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #1F2937; overflow-x: hidden; }
         * { box-sizing: border-box; }
         
         .dash-layout { display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar Styling */
-        .sidebar { width: 260px; background-color: #0A1128; border-right: 1px solid #1E293B; display: flex; flex-direction: column; overflow-y: auto; }
-        .sidebar-header { padding: 24px; display: flex; alignItems: center; gap: 12px; position: sticky; top: 0; background: #0A1128; z-index: 10; border-bottom: 1px solid #1E293B; }
+        /* Sidebar Styling (Light Theme) */
+        .sidebar { width: 260px; background-color: #FFFFFF; border-right: 1px solid #E5E7EB; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid #F3F4F6; display: flex; align-items: center; justify-content: center; }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 24px 0; }
         .nav-group { margin-bottom: 24px; padding: 0 16px; }
-        .nav-label { font-size: 11px; color: #64748B; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 12px; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: #94A3B8; font-weight: 500; font-size: 14px; margin-bottom: 4px; }
-        .nav-item:hover { background-color: #1E293B; color: #F8FAFC; }
-        .nav-item.active { background-color: rgba(37, 99, 235, 0.15); color: #3B82F6; border-left: 3px solid #3B82F6; }
+        .nav-label { font-size: 11px; color: #6B7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding-left: 12px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; cursor: pointer; color: #4B5563; font-weight: 500; font-size: 14px; margin-bottom: 4px; transition: 0.2s; }
+        .nav-item:hover { background-color: #F3F4F6; color: #111827; }
+        .nav-item.active { background-color: #D81B60; color: #FFFFFF; box-shadow: 0 4px 6px rgba(216, 27, 96, 0.2); }
+        .nav-badge { background-color: #FCA5A5; color: #991B1B; font-size: 10px; padding: 2px 6px; border-radius: 99px; font-weight: bold; }
         
-        /* Main Content Styling */
-        .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; background-color: #060B19; }
+        .sidebar-footer { padding: 16px; border-top: 1px solid #F3F4F6; }
+        .profile-box { background-color: #FFF1F2; padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: #E5E7EB; overflow: hidden; }
+        .profile-info { display: flex; flex-direction: column; flex: 1; }
+        .profile-info strong { font-size: 14px; color: #1F2937; }
+        .profile-info span { font-size: 12px; color: #6B7280; }
+        .logout-btn { background: none; border: none; cursor: pointer; padding: 4px; }
+
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; background-color: #F9FAFB; }
         
-        /* Header & Switch Business */
-        .top-header { height: 70px; border-bottom: 1px solid #1E293B; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background-color: #0A1128; }
-        .business-switcher { display: flex; align-items: center; gap: 10px; background: #060B19; border: 1px solid #1E293B; padding: 8px 16px; border-radius: 8px; cursor: pointer; position: relative; }
-        .business-switcher:hover { border-color: #334155; }
-        .dropdown-menu { position: absolute; top: 110%; left: 0; width: 100%; background: #0E1629; border: 1px solid #1E293B; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); z-index: 50; overflow: hidden; display: none; }
-        .dropdown-menu.open { display: block; }
-        .dropdown-item { padding: 12px 16px; font-size: 14px; color: #E2E8F0; cursor: pointer; transition: 0.2s; }
-        .dropdown-item:hover { background: #1E293B; }
+        /* Top Header */
+        .top-header { height: 72px; background-color: #FFFFFF; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+        .btn-switch-outline { background: #FFFFFF; border: 1px solid #D1D5DB; color: #4B5563; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-switch-outline:hover { border-color: #9CA3AF; color: #1F2937; }
+        .header-actions { display: flex; align-items: center; gap: 20px; }
         
         .content-area { padding: 32px; overflow-y: auto; flex: 1; }
-        
-        /* Modern Cards */
-        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px; }
-        .card-bal { background: linear-gradient(135deg, #BE185D 0%, #9D174D 100%); }
-        .card-cus { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
-        .card-txn { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
-        .card-wth { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
-        
-        .metric-card { padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); position: relative; overflow: hidden; }
-        .metric-card h3 { font-size: 14px; color: rgba(255,255,255,0.8); font-weight: 500; margin: 0 0 8px 0; }
-        .metric-card .value { font-size: 28px; font-weight: 800; color: #FFFFFF; }
-        
-        /* Filters & Overview */
-        .overview-section { background-color: #0A1128; border: 1px solid #1E293B; border-radius: 16px; padding: 24px; margin-bottom: 32px; }
-        .filter-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
-        .time-filters { display: flex; gap: 8px; flex-wrap: wrap; }
-        .filter-btn { background: #060B19; border: 1px solid #1E293B; color: #94A3B8; padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; transition: 0.2s; }
-        .filter-btn:hover { color: #F8FAFC; border-color: #334155; }
-        .filter-btn.active { background: #BE185D; border-color: #BE185D; color: #FFFFFF; }
-        
-        /* Stats row below filters */
-        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-        .stat-box { background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; text-align: center; }
-        .stat-box h4 { margin: 0 0 8px 0; font-size: 13px; color: #94A3B8; font-weight: 500; }
-        .stat-box div { font-size: 20px; font-weight: 700; color: #F8FAFC; }
-        
-        /* Chart Simulation */
-        .chart-area { height: 200px; display: flex; align-items: flex-end; border-bottom: 1px dashed #334155; border-left: 1px dashed #334155; padding-left: 10px; position: relative; }
-        .chart-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; }
-        .bar-rev { width: 8px; background: #BE185D; border-radius: 4px 4px 0 0; position: absolute; bottom: 0; left: 40%; }
-        .bar-txn { width: 8px; background: #10B981; border-radius: 4px 4px 0 0; position: absolute; bottom: 0; right: 40%; }
-        
-        /* Table Styles */
-        .table-card { background-color: #0A1128; border: 1px solid #1E293B; border-radius: 16px; overflow: hidden; }
-        .table-header { padding: 20px 24px; border-bottom: 1px solid #1E293B; display: flex; justify-content: space-between; align-items: center; }
-        .txn-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .txn-table th { padding: 16px 24px; border-bottom: 1px solid #1E293B; color: #64748B; font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        .txn-table td { padding: 16px 24px; border-bottom: 1px solid #1A2642; color: #E2E8F0; font-size: 14px; }
-        .txn-table tr:hover { background-color: rgba(255,255,255,0.02); }
-        .status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-        .status-paid { background-color: rgba(16, 185, 129, 0.1); color: #10B981; }
-        .status-pending { background-color: rgba(245, 158, 11, 0.1); color: #F59E0B; }
-        .status-failed { background-color: rgba(239, 68, 68, 0.1); color: #EF4444; }
 
-        @media (max-width: 1024px) { .sidebar { display: none; } }
+        /* Colored Flat Cards */
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 32px; }
+        .colored-card { padding: 24px; border-radius: 16px; color: #FFFFFF; text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card-magenta { background-color: #C2185B; }
+        .card-pink { background-color: #F48FB1; }
+        .card-teal { background-color: #00BFA5; }
+        .card-orange { background-color: #FF8A65; }
+        .colored-card h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px 0; }
+        .colored-card .value { font-size: 28px; font-weight: 700; margin: 0; }
+
+        /* Overview Filters & Stats */
+        .overview-panel { background: #FFFFFF; border-radius: 16px; border: 1px solid #E5E7EB; padding: 24px; margin-bottom: 32px; }
+        .filter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+        .pill { border: 1px solid #D1D5DB; background: transparent; color: #6B7280; padding: 6px 16px; border-radius: 99px; font-size: 13px; cursor: pointer; }
+        .pill.active { background: #D81B60; color: #FFFFFF; border-color: #D81B60; }
+        
+        .stat-banner { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-box { padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-box.bg-pink { background: #FCE4EC; color: #C2185B; }
+        .stat-box.bg-yellow { background: #FFF8E1; color: #1F2937; }
+        .stat-box h4 { font-size: 13px; font-weight: 500; margin: 0 0 8px 0; }
+        .stat-box .amount { font-size: 20px; font-weight: 700; margin: 0; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: #FFFFFF; width: 100%; max-width: 400px; padding: 32px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .biz-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #F9FAFB; border-radius: 8px; cursor: pointer; }
+        .biz-row.selected { background: #FCE4EC; }
+        
+        .toggle-switch { width: 44px; height: 24px; border-radius: 24px; position: relative; transition: 0.3s; }
+        .toggle-switch.on { background: #D81B60; }
+        .toggle-switch.off { background: #D1D5DB; }
+        .toggle-knob { width: 20px; height: 20px; background: #FFFFFF; border-radius: 50%; position: absolute; top: 2px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .toggle-switch.on .toggle-knob { left: 22px; }
+        .toggle-switch.off .toggle-knob { left: 2px; }
+
+        .btn-primary { width: 100%; background: #D81B60; color: #FFFFFF; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-primary:hover { background: #C2185B; }
+        .btn-secondary { width: 100%; background: #FFFFFF; color: #D81B60; border: 1px solid #D81B60; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-secondary:hover { background: #FFF1F2; }
+
+        /* Empty Chart Area */
+        .chart-placeholder { height: 200px; border-left: 2px dashed #E5E7EB; border-bottom: 2px dashed #E5E7EB; display: flex; align-items: center; justify-content: center; color: #9CA3AF; font-size: 14px; }
       `}} />
 
+      {/* RENDER MODAL */}
+      <BusinessModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        businesses={businesses}
+        activeBiz={activeBusiness}
+        onSwitch={(biz: string) => setActiveBusiness(biz)}
+        onAdd={handleAddBusiness}
+      />
+
       <div className="dash-layout">
-        
-        {/* --- SIDEBAR --- */}
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <img src="https://paypaxa.com/logo.png" alt="PAYPAXA" style={{ height: '32px', width: 'auto' }} />
-            <span style={{ fontSize: '20px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px' }}>PAYPAXA</span>
-          </div>
-          
-          <div style={{ padding: '24px 0' }}>
-            <div className="nav-group">
-              <div className="nav-label">Dashboard</div>
-              <div className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}><Icons.Home /> Overview</div>
-              <div className={`nav-item ${activeTab === 'wallet' ? 'active' : ''}`} onClick={() => setActiveTab('wallet')}><Icons.Wallet /> Wallet</div>
-            </div>
+        {/* RENDER SIDEBAR */}
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            <div className="nav-group">
-              <div className="nav-label">Collections</div>
-              <div className={`nav-item ${activeTab === 'transactions' ? 'active' : ''}`} onClick={() => setActiveTab('transactions')}><Icons.Activity /> Transactions</div>
-              <div className={`nav-item ${activeTab === 'customers' ? 'active' : ''}`} onClick={() => setActiveTab('customers')}><Icons.Users /> Customers</div>
-              <div className={`nav-item ${activeTab === 'reserved' ? 'active' : ''}`} onClick={() => setActiveTab('reserved')}><Icons.Bank /> Reserved Account</div>
-            </div>
-
-            <div className="nav-group">
-              <div className="nav-label">Disbursements</div>
-              <div className={`nav-item ${activeTab === 'transfer' ? 'active' : ''}`} onClick={() => setActiveTab('transfer')}><Icons.Transfer /> Transfer</div>
-            </div>
-
-            <div className="nav-group">
-              <div className="nav-label">Value Added (VTU)</div>
-              <div className={`nav-item ${activeTab === 'vtu' ? 'active' : ''}`} onClick={() => setActiveTab('vtu')}><Icons.Utility /> Airtime & Data</div>
-              <div className={`nav-item ${activeTab === 'identity' ? 'active' : ''}`} onClick={() => setActiveTab('identity')}><Icons.Code /> Identity (NIN/BVN)</div>
-            </div>
-
-            <div className="nav-group">
-              <div className="nav-label">Merchant</div>
-              <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}><Icons.Settings /> Settings</div>
-              <div className={`nav-item ${activeTab === 'api' ? 'active' : ''}`} onClick={() => setActiveTab('api')}><Icons.Code /> Developer API</div>
-            </div>
-          </div>
-        </aside>
-
-        {/* --- MAIN CONTENT --- */}
+        {/* MAIN CONTENT AREA */}
         <main className="main-content">
-          
-          {/* Top Header */}
           <header className="top-header">
-            
-            {/* Multi-Business Switcher */}
-            <div className="business-switcher" onClick={() => setIsBusinessMenuOpen(!isBusinessMenuOpen)}>
-              <span style={{ fontSize: '14px', fontWeight: '600', color: '#E2E8F0' }}>{activeBusiness}</span>
-              <Icons.ChevronDown />
-              
-              <div className={`dropdown-menu ${isBusinessMenuOpen ? 'open' : ''}`}>
-                {businesses.map((biz) => (
-                  <div key={biz} className="dropdown-item" onClick={(e) => { e.stopPropagation(); setActiveBusiness(biz); setIsBusinessMenuOpen(false); }}>
-                    {biz}
-                  </div>
-                ))}
-              </div>
+            <div>
+              <button style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', marginRight: '16px' }}>☰</button>
+              <button className="btn-switch-outline" onClick={() => setIsModalOpen(true)}>
+                Switch Business <Icons.ChevronDown />
+              </button>
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '2px solid #334155' }}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Profile" style={{ width: '100%', height: '100%' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#F8FAFC' }}>Mukhtar Abdulwaheed</span>
-                <span style={{ fontSize: '12px', color: '#94A3B8' }}>{activeBusiness}</span>
-              </div>
+            <div className="header-actions">
+              <Icons.Moon />
+              <Icons.Bell />
             </div>
           </header>
 
-          {/* Scrollable Content Area */}
           <div className="content-area">
-            
-            <div style={{ marginBottom: '24px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#F8FAFC', margin: '0 0 8px 0' }}>
-                <span style={{ color: '#BE185D' }}>Welcome Back,</span> Mukhtar! 🚀
+            {/* Greeting */}
+            <div style={{ marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: '0 0 4px 0' }}>
+                <span style={{ color: '#D81B60' }}>Welcome Back, {activeBusiness}!</span> 😎
               </h1>
-              <p style={{ color: '#94A3B8', margin: 0, fontSize: '15px' }}>Here's a Quick Overview of Your Account:</p>
+              <p style={{ color: '#4B5563', margin: 0, fontSize: '15px' }}>Here's a Quick Overview of Your Account:</p>
             </div>
 
-            {/* Metrics */}
+            {/* 4 Colored Flat Cards */}
             <div className="metric-grid">
-              <div className="metric-card card-bal">
+              <div className="colored-card card-magenta">
+                <Icons.NodeGraph />
                 <h3>Account Balance</h3>
-                <div className="value">₦1,500,450.00</div>
+                <p className="value">₦1.50</p>
               </div>
-              <div className="metric-card card-cus">
+              <div className="colored-card card-pink">
+                <Icons.PersonFlat />
                 <h3>Total Customers</h3>
-                <div className="value">1,204</div>
+                <p className="value">0</p>
               </div>
-              <div className="metric-card card-txn">
+              <div className="colored-card card-teal">
+                <Icons.BriefcaseFlat />
                 <h3>Total Transactions</h3>
-                <div className="value">8,432</div>
+                <p className="value">0</p>
               </div>
-              <div className="metric-card card-wth">
+              <div className="colored-card card-orange">
+                <Icons.MailboxFlat />
                 <h3>Total Withdrawals</h3>
-                <div className="value">₦540,000.00</div>
+                <p className="value">₦0.00</p>
               </div>
             </div>
 
-            {/* Overview Section */}
-            <div className="overview-section">
-              <div className="filter-row">
-                <h2 style={{ fontSize: '16px', margin: 0, fontWeight: '600' }}>Overview</h2>
-                <div className="time-filters">
-                  <button className="filter-btn active">Today</button>
-                  <button className="filter-btn">Yesterday</button>
-                  <button className="filter-btn">Last 7 days</button>
-                  <button className="filter-btn">Last 30 days</button>
-                  <button className="filter-btn">All Time</button>
+            {/* Bottom Overview Section */}
+            <div className="overview-panel">
+              <div className="filter-header">
+                <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Overview</h2>
+                <div className="filter-pills">
+                  <button className="pill active">Today</button>
+                  <button className="pill">Yesterday</button>
+                  <button className="pill">Last 7 days</button>
+                  <button className="pill">Last 30 days</button>
+                  <button className="pill">All Time</button>
+                  <button className="pill">Custom</button>
                 </div>
               </div>
 
-              <div className="stats-row">
-                <div className="stat-box">
+              <div className="stat-banner">
+                <div className="stat-box bg-pink">
                   <h4>Total Revenue</h4>
-                  <div style={{ color: '#BE185D' }}>₦125,000.00</div>
+                  <p className="amount">₦0.00</p>
                 </div>
-                <div className="stat-box">
+                <div className="stat-box bg-yellow">
                   <h4>Total Transactions</h4>
-                  <div style={{ color: '#10B981' }}>145</div>
+                  <p className="amount">0</p>
                 </div>
-                <div className="stat-box">
+                <div className="stat-box bg-pink">
                   <h4>Pending Settlement</h4>
-                  <div style={{ color: '#F59E0B' }}>₦45,000.00</div>
+                  <p className="amount">₦0.00</p>
                 </div>
               </div>
 
-              {/* CSS Bar Chart Simulation */}
-              <div className="chart-area">
-                {chartData.map((data, i) => (
-                  <div key={i} className="chart-col">
-                    <div className="bar-rev" style={{ height: data.rev }}></div>
-                    <div className="bar-txn" style={{ height: data.txn }}></div>
-                    <span style={{ position: 'absolute', bottom: '-25px', fontSize: '12px', color: '#64748B' }}>{data.day}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '30px', fontSize: '12px', color: '#94A3B8' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#BE185D' }}></div> Revenue</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }}></div> Transactions</div>
-              </div>
-            </div>
-
-            {/* Recent Transactions Table */}
-            <div className="table-card">
-              <div className="table-header">
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#FFFFFF' }}>Recent Transactions</h3>
-              </div>
-              
-              <div style={{ overflowX: 'auto' }}>
-                <table className="txn-table">
-                  <thead>
-                    <tr>
-                      <th>Customer Name</th>
-                      <th>Amount</th>
-                      <th>Reference</th>
-                      <th>Status</th>
-                      <th>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((txn, index) => (
-                      <tr key={index}>
-                        <td style={{ fontWeight: '500' }}>{txn.customer}</td>
-                        <td style={{ fontWeight: '600', color: '#F8FAFC' }}>{txn.amount}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94A3B8' }}>
-                            {txn.id} <span style={{ cursor: 'pointer' }}><Icons.Copy /></span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`status-badge ${
-                            txn.status === 'Paid' ? 'status-paid' : 
-                            txn.status === 'Pending' ? 'status-pending' : 'status-failed'
-                          }`}>
-                            {txn.status}
-                          </span>
-                        </td>
-                        <td style={{ color: '#94A3B8', fontSize: '13px' }}>{txn.date}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* Chart Placeholder (To be replaced with Recharts/Chart.js later) */}
+              <div className="chart-placeholder">
+                [ Chart Graph Area ]
               </div>
             </div>
 
