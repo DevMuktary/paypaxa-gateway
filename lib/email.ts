@@ -78,7 +78,7 @@ function getZeptoClient() {
 export async function sendVerificationEmail(recipientEmail: string, token: string) {
   try {
     const client = getZeptoClient();
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa-production.up.railway.app';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa.com';
     const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
     const htmlContent = wrapEmail(`
