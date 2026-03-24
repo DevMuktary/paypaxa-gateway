@@ -50,7 +50,12 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(`Network block (Status ${response.status}). Check your domain firewall settings.`);
+      }
 
       if (!response.ok) throw new Error(data.error || 'Invalid credentials');
 
@@ -80,7 +85,12 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(`Network block (Status ${response.status}). Check your domain firewall settings.`);
+      }
 
       if (!response.ok) throw new Error(data.error || 'Failed to resend code');
 
@@ -107,7 +117,12 @@ export default function LoginPage() {
         body: JSON.stringify({ email, otp })
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(`Network block (Status ${response.status}). Check your domain firewall settings.`);
+      }
 
       if (!response.ok) throw new Error(data.error || 'Invalid verification code');
 
