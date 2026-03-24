@@ -5,11 +5,9 @@ import { SendMailClient } from "zeptomail";
 const SENDER_EMAIL = "hello@paypaxa.com"; 
 const SENDER_NAME = "PAYPAXA Security";
 const BOUNCE_EMAIL = "bounce@bounce-zem.paypaxa.com"; 
-
-// Anti-Spam Requirement: Add a real or registered business address here
 const COMPANY_ADDRESS = "123 Financial District, Victoria Island, Lagos, Nigeria";
 
-// --- HTML TEMPLATE WRAPPER (Enterprise Table Layout) ---
+// --- HTML TEMPLATE WRAPPER ---
 const wrapEmail = (content: string, baseUrl: string) => `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -31,7 +29,6 @@ const wrapEmail = (content: string, baseUrl: string) => `
 <body style="margin: 0; padding: 0; background-color: #F3F4F6;">
   <center class="wrapper" style="width: 100%; table-layout: fixed; background-color: #F3F4F6; padding: 40px 0;">
     <table class="main" width="100%" max-width="600" align="center" style="background-color: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; margin: 0 auto;">
-      
       <tr>
         <td style="background-color: #060B19; padding: 30px; text-align: center;">
           <a href="${baseUrl}" target="_blank" style="text-decoration: none;">
@@ -39,25 +36,15 @@ const wrapEmail = (content: string, baseUrl: string) => `
           </a>
         </td>
       </tr>
-
       <tr>
         <td style="padding: 40px 30px; line-height: 1.6; font-size: 16px; color: #334155;">
           ${content}
         </td>
       </tr>
-
-      <tr>
-        <td style="padding: 0 30px 30px 30px; text-align: center;">
-          <a href="${baseUrl}" target="_blank">
-            <img src="${baseUrl}/promo-banner-placeholder.png" alt="Learn more about PAYPAXA tools" width="100%" style="max-width: 100%; height: auto; border-radius: 8px; display: block; background-color: #F8FAFC; border: 1px solid #E2E8F0;" />
-          </a>
-        </td>
-      </tr>
-
       <tr>
         <td style="background-color: #F8FAFC; padding: 30px; text-align: center; border-top: 1px solid #E2E8F0;">
           <p style="margin: 0 0 10px 0; font-size: 13px; color: #64748B;">
-            You are receiving this email because a registration attempt was made using this address on the PAYPAXA gateway.
+            Secure notification from the PAYPAXA gateway.
           </p>
           <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748B;">
             <strong>PAYPAXA Inc.</strong><br/>
@@ -68,28 +55,29 @@ const wrapEmail = (content: string, baseUrl: string) => `
           </p>
         </td>
       </tr>
-
     </table>
   </center>
 </body>
 </html>
 `;
 
-// --- SEND FUNCTION ---
+// --- HELPER: INITIALIZE ZEPTOMAIL CLIENT ---
+function getZeptoClient() {
+  let url = process.env.ZEPTOMAIL_URL || "https://api.zeptomail.com/v1.1/email";
+  if (url.endsWith('/send')) url = url.replace('/send', '');
+  if (!url.startsWith('http')) url = `https://${url}`;
+
+  let apiToken = process.env.ZEPTOMAIL_API_KEY || "";
+  if (!apiToken.startsWith("Zoho-enczapikey")) {
+    apiToken = `Zoho-enczapikey ${apiToken}`;
+  }
+  return new SendMailClient({ url, token: apiToken });
+}
+
+// --- 1. SEND REGISTRATION VERIFICATION EMAIL ---
 export async function sendVerificationEmail(recipientEmail: string, token: string) {
   try {
-    let url = process.env.ZEPTOMAIL_URL || "https://api.zeptomail.com/v1.1/email";
-    if (url.endsWith('/send')) url = url.replace('/send', '');
-    if (!url.startsWith('http')) url = `https://${url}`;
-
-    let apiToken = process.env.ZEPTOMAIL_API_KEY || "";
-    if (!apiToken.startsWith("Zoho-enczapikey")) {
-      apiToken = `Zoho-enczapikey ${apiToken}`;
-    }
-
-    const client = new SendMailClient({ url, token: apiToken });
-    
-    // Fallback to your Railway domain if NEXT_PUBLIC_BASE_URL isn't set yet
+    const client = getZeptoClient();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa-production.up.railway.app';
     const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
@@ -108,19 +96,51 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
       </p>
     `, baseUrl);
 
-    const response = await client.sendMail({
+    await client.sendMail({
       bounce_address: BOUNCE_EMAIL, 
       from: { address: SENDER_EMAIL, name: SENDER_NAME },
       to: [{ email_address: { address: recipientEmail } }],
       subject: "Verify your PAYPAXA Account",
       htmlbody: htmlContent,
     });
-
-    console.log("✅ ZeptoMail Sent Successfully");
     return true;
+  } catch (error) {
+    console.error("❌ ZeptoMail Error:", error);
+    return false;
+  }
+}
 
-  } catch (error: any) {
-    console.error("❌ ZeptoMail Error:", JSON.stringify(error, null, 2));
+// --- 2. SEND TWO-FACTOR AUTHENTICATION (OTP) EMAIL ---
+export async function sendTwoFactorEmail(recipientEmail: string, firstName: string, otpCode: string) {
+  try {
+    const client = getZeptoClient();
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa-production.up.railway.app';
+
+    const htmlContent = wrapEmail(`
+      <h2 style="color: #060B19; margin-top: 0; font-size: 24px;">Login Authentication</h2>
+      <p style="margin-bottom: 20px;">Hello ${firstName},</p>
+      <p style="margin-bottom: 30px;">A new sign-in attempt was detected for your PAYPAXA account. Please use the 6-digit authentication code below to complete your secure login.</p>
+      
+      <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 25px; text-align: center; border-radius: 8px; margin: 30px 0;">
+        <span style="font-size: 36px; font-weight: 800; color: #060B19; letter-spacing: 8px; font-family: monospace;">${otpCode}</span>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 14px; color: #64748B; line-height: 1.6;">
+        This code is valid for <strong>10 minutes</strong>.<br/>
+        If you did not attempt to sign in to your account, please change your password immediately.
+      </p>
+    `, baseUrl);
+
+    await client.sendMail({
+      bounce_address: BOUNCE_EMAIL, 
+      from: { address: SENDER_EMAIL, name: SENDER_NAME },
+      to: [{ email_address: { address: recipientEmail } }],
+      subject: `Your PAYPAXA Login Code: ${otpCode}`,
+      htmlbody: htmlContent,
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ ZeptoMail OTP Error:", error);
     return false;
   }
 }
