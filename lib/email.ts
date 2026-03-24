@@ -24,6 +24,8 @@ const wrapEmail = (content: string, baseUrl: string) => `
     img { border: 0; }
     .wrapper { width: 100%; table-layout: fixed; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     .main { background-color: #FFFFFF; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .btn { display: inline-block; background-color: #2563EB; color: #FFFFFF; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-top: 10px; margin-bottom: 10px; }
+    .btn:hover { background-color: #1D4ED8; }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #F3F4F6;">
@@ -32,7 +34,7 @@ const wrapEmail = (content: string, baseUrl: string) => `
       
       <tr>
         <td style="background-color: #060B19; padding: 30px; text-align: center;">
-          <a href="https://paypaxa.com" target="_blank" style="text-decoration: none;">
+          <a href="${baseUrl}" target="_blank" style="text-decoration: none;">
             <img src="https://paypaxa.com/logo.png" alt="PAYPAXA Logo" width="180" style="max-width: 180px; display: block; margin: 0 auto; color: #FFFFFF; font-size: 24px; font-weight: bold; text-decoration: none; letter-spacing: 1px;" />
           </a>
         </td>
@@ -46,11 +48,8 @@ const wrapEmail = (content: string, baseUrl: string) => `
 
       <tr>
         <td style="padding: 0 30px 30px 30px; text-align: center;">
-          <a href="https://paypaxa.com" target="_blank" style="text-decoration: none; display: block;">
-            <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px; text-align: center;">
-              <p style="margin: 0; font-size: 15px; color: #3B82F6; font-weight: bold;">Experience Seamless Payments</p>
-              <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748B;">Explore our modern developer APIs and integration tools.</p>
-            </div>
+          <a href="${baseUrl}" target="_blank">
+            <img src="${baseUrl}/promo-banner-placeholder.png" alt="Learn more about PAYPAXA tools" width="100%" style="max-width: 100%; height: auto; border-radius: 8px; display: block; background-color: #F8FAFC; border: 1px solid #E2E8F0;" />
           </a>
         </td>
       </tr>
@@ -90,8 +89,8 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
 
     const client = new SendMailClient({ url, token: apiToken });
     
-    // Fallback to your primary domain if NEXT_PUBLIC_BASE_URL isn't set yet
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa.com';
+    // Fallback to your Railway domain if NEXT_PUBLIC_BASE_URL isn't set yet
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://paypaxa-production.up.railway.app';
     const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
     const htmlContent = wrapEmail(`
@@ -100,12 +99,12 @@ export async function sendVerificationEmail(recipientEmail: string, token: strin
       <p style="margin-bottom: 30px;">To ensure the security of your transactions and activate your merchant workspace, please verify your email address by clicking the button below.</p>
       
       <div style="text-align: center; margin: 35px 0;">
-        <a href="${verificationLink}" style="display: inline-block; background-color: #2563EB; color: #FFFFFF; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: bold; font-size: 16px;">Verify Email Address</a>
+        <a href="${verificationLink}" class="btn" style="color: #ffffff; text-decoration: none;">Verify Email Address</a>
         </div>
 
       <p style="margin-top: 30px; font-size: 14px; color: #64748B;">Or copy and paste this link into your browser:</p>
       <p style="font-size: 13px; color: #3B82F6; word-break: break-all;">
-        <a href="${verificationLink}" style="color: #3B82F6; text-decoration: underline;">${verificationLink}</a>
+        <a href="${verificationLink}" style="color: #3B82F6;">${verificationLink}</a>
       </p>
     `, baseUrl);
 
