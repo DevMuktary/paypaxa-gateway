@@ -12,8 +12,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and OTP code are required' }, { status: 400 });
     }
 
+    // Force clean the inputs to prevent invisible space or capitalization errors
+    const cleanOtp = otp.toString().trim();
+    const cleanEmail = email.toString().trim().toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: cleanEmail },
       include: { merchant: true } 
     });
 
@@ -29,11 +33,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authentication code has expired. Please login again.' }, { status: 401 });
     }
 
-    if (user.twoFactorOtp !== otp) {
-      return NextResponse.json({ error: 'Invalid authentication code.' }, { status: 401 });
+    if (user.twoFactorOtp !== cleanOtp) {
+      return NextResponse.json({ error: 'Invalid 6-digit code. Please try again.' }, { status: 401 });
     }
 
-    // Code is valid! Clear the OTP
+    // Code is valid! Clear the OTP to prevent replay attacks
     await prisma.user.update({
       where: { id: user.id },
       data: {
