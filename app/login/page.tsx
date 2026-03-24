@@ -70,7 +70,8 @@ export default function LoginPage() {
   const handleResendOtp = async () => {
     setCanResend(false);
     setCountdown(30);
-    setStatus({ type: 'success', message: 'Sending new code...' });
+    setLoading(true);
+    setStatus({ type: '', message: '' });
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -86,8 +87,10 @@ export default function LoginPage() {
       setStatus({ type: 'success', message: 'A new 6-digit code has been sent to your email.' });
     } catch (error: any) {
       setStatus({ type: 'error', message: error.message });
-      setCanResend(true); // Allow them to try again if it failed
+      setCanResend(true); 
       setCountdown(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -129,6 +132,27 @@ export default function LoginPage() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
   );
 
+  // --- STATE 2: THE LOADING OVERLAY ---
+  if (loading) {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{__html: `
+          html, body { margin: 0; padding: 0; background-color: #060B19; width: 100%; height: 100%; overflow: hidden; }
+          @keyframes subtle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.97); }
+          }
+        `}} />
+        <div style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#060B19' }}>
+          <div style={{ animation: 'subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="https://paypaxa.com/logo.png" alt="PAYPAXA Loading" style={{ height: '64px', width: 'auto' }} />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // --- MAIN RENDER (STATES 1 & 3) ---
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
@@ -228,7 +252,7 @@ export default function LoginPage() {
               </div>
 
               <button type="submit" disabled={loading} className="paypaxa-btn">
-                {loading ? 'Authenticating...' : 'Sign In'}
+                Sign In
               </button>
             </form>
           ) : (
@@ -249,7 +273,7 @@ export default function LoginPage() {
               </div>
 
               <button type="submit" disabled={loading || otp.length < 6} className="paypaxa-btn">
-                {loading ? 'Verifying...' : 'Verify & Continue'}
+                Verify & Continue
               </button>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
