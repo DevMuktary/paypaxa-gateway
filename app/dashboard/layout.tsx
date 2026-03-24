@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark'); // Defaulting to dark for premium feel
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -37,7 +37,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const activeBusiness = businesses.find(b => b.isActive);
 
-  // Premium Outline Icons
   const Icons = {
     Home: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>,
     Wallet: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>,
@@ -58,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <>
+    <div className="dashboard-shell">
       <style dangerouslySetInnerHTML={{__html: `
         :root {
           --bg-main: #FAFAFA;
@@ -76,8 +75,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
 
         [data-theme="dark"] {
-          --bg-main: #030712;       /* Ultra deep slate */
-          --bg-panel: #0B1121;      /* Elevated surface */
+          --bg-main: #030712;
+          --bg-panel: #0B1121;
           --border-color: rgba(255, 255, 255, 0.06);
           --text-high: #F9FAFB;
           --text-med: #9CA3AF;
@@ -95,11 +94,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         .dashboard-shell { display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- THE PRECISE SIDEBAR --- */
         .sidebar { width: 270px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 40; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
         .brand-zone { height: 76px; padding: 0 28px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-        
         .sidebar-content { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 32px; }
         .sidebar-content::-webkit-scrollbar { width: 0px; }
         
@@ -109,12 +105,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .nav-link { display: flex; align-items: center; gap: 14px; padding: 10px 12px; color: var(--text-med); text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 8px; transition: all 0.2s ease; position: relative; }
         .nav-link:hover { background-color: var(--nav-hover); color: var(--text-high); }
         .nav-link.active { background-color: var(--nav-active); color: var(--brand-primary); font-weight: 600; }
-        /* Active Glow Indicator */
         .nav-link.active::before { content: ''; position: absolute; left: -20px; top: 50%; transform: translateY(-50%); height: 20px; width: 4px; background: var(--brand-primary); border-radius: 0 4px 4px 0; box-shadow: 0 0 10px var(--brand-primary); }
 
         .badge-new { background-color: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); color: #EC4899; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-left: auto; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* --- THE TOP BAR --- */
         .main-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; background-color: var(--bg-main); }
         .topbar { height: 76px; background-color: var(--glass-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 36px; z-index: 30; }
         
@@ -127,7 +121,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         .user-avatar { width: 36px; height: 36px; border-radius: 10px; background-color: var(--border-color); overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; }
 
-        /* --- CUSTOM MODAL --- */
         .modal-veil { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .modal-veil.open { opacity: 1; pointer-events: auto; }
         .modal-box { background: var(--bg-panel); width: 100%; max-width: 440px; border-radius: 24px; box-shadow: var(--shadow-modal); border: 1px solid var(--border-color); transform: translateY(20px) scale(0.95); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
@@ -153,110 +146,98 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .page-scroll { flex: 1; overflow-y: auto; position: relative; }
       `}} />
 
-      <div className="dashboard-shell">
-        
-        {/* --- SIDEBAR --- */}
-        <aside className="sidebar">
-          <div className="brand-zone">
-            <img src="https://paypaxa.com/logo.png" alt="PAYPAXA" style={{ height: '32px', width: 'auto' }} />
-            <span style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-high)', letterSpacing: '-0.5px' }}>PAYPAXA</span>
-          </div>
-
-          <div className="sidebar-content">
-            
-            {/* Dashboard */}
-            <div className="nav-group">
-              <div className="nav-title">Dashboard</div>
-              <Link href="/dashboard" className={`nav-link ${pathname === '/dashboard' ? 'active' : ''}`}><Icons.Home /> Overview</Link>
-              <Link href="/dashboard/wallet" className={`nav-link ${pathname === '/dashboard/wallet' ? 'active' : ''}`}><Icons.Wallet /> Wallet</Link>
-            </div>
-
-            {/* Collections - UPDATED WITHOUT VTU */}
-            <div className="nav-group">
-              <div className="nav-title">Collections</div>
-              <Link href="/dashboard/links" className={`nav-link ${pathname === '/dashboard/links' ? 'active' : ''}`}><Icons.Link /> Payment Links</Link>
-              <Link href="/dashboard/invoices" className={`nav-link ${pathname === '/dashboard/invoices' ? 'active' : ''}`}><Icons.Invoice /> Invoices</Link>
-              <Link href="/dashboard/transactions" className={`nav-link ${pathname === '/dashboard/transactions' ? 'active' : ''}`}><Icons.Activity /> Transactions</Link>
-              <Link href="/dashboard/customers" className={`nav-link ${pathname === '/dashboard/customers' ? 'active' : ''}`}><Icons.Users /> Customers</Link>
-              <Link href="/dashboard/reserved-account" className={`nav-link ${pathname === '/dashboard/reserved-account' ? 'active' : ''}`}><Icons.Bank /> Reserved Account</Link>
-            </div>
-
-            {/* Disbursements */}
-            <div className="nav-group">
-              <div className="nav-title">Disbursements</div>
-              <Link href="/dashboard/transfer" className={`nav-link ${pathname === '/dashboard/transfer' ? 'active' : ''}`}><Icons.Transfer /> Transfer</Link>
-            </div>
-
-            {/* Merchant */}
-            <div className="nav-group">
-              <div className="nav-title">Merchant</div>
-              <Link href="/dashboard/settings" className={`nav-link ${pathname === '/dashboard/settings' ? 'active' : ''}`}><Icons.Settings /> Settings</Link>
-              <Link href="/dashboard/webhooks" className={`nav-link ${pathname === '/dashboard/webhooks' ? 'active' : ''}`}><Icons.Webhooks /> Webhook Event <span className="badge-new">New</span></Link>
-              <Link href="/dashboard/api" className={`nav-link ${pathname === '/dashboard/api' ? 'active' : ''}`}><Icons.Api /> Developer API</Link>
-              <Link href="/dashboard/support" className={`nav-link ${pathname === '/dashboard/support' ? 'active' : ''}`}><Icons.Support /> Support</Link>
-            </div>
-          </div>
-        </aside>
-
-        {/* --- MAIN STAGE --- */}
-        <div className="main-stage">
-          <header className="topbar">
-            <div className="biz-switcher" onClick={() => setIsBusinessModalOpen(true)}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-high)' }}>{activeBusiness?.name}</span>
-              </div>
-              <Icons.ChevronDown />
-            </div>
-
-            <div className="topbar-actions">
-              <button className="action-icon" onClick={toggleTheme} title="Toggle Theme">
-                {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
-              </button>
-              <button className="action-icon">
-                <Icons.Bell />
-              </button>
-              <div className="user-avatar">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Profile" width="100%" height="100%" />
-              </div>
-            </div>
-          </header>
-
-          <main className="page-scroll">
-            {children}
-          </main>
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="brand-zone">
+          <img src="https://paypaxa.com/logo.png" alt="PAYPAXA" style={{ height: '32px', width: 'auto' }} />
+          <span style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-high)', letterSpacing: '-0.5px' }}>PAYPAXA</span>
         </div>
 
-        {/* --- CUSTOM BUSINESS MODAL --- */}
-        <div className={`modal-veil ${isBusinessModalOpen ? 'open' : ''}`} onClick={() => setIsBusinessModalOpen(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h3>Select a Business</h3>
-              <button style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-med)', cursor: 'pointer' }} onClick={() => setIsBusinessModalOpen(false)}>✕</button>
-            </div>
-            
-            <div className="biz-list">
-              {businesses.map((biz) => (
-                <div key={biz.id} className={`biz-row ${biz.isActive ? 'active' : ''}`} onClick={() => handleSwitchBusiness(biz.id)}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ fontSize: '15px', fontWeight: '600', color: biz.isActive ? 'var(--brand-primary)' : 'var(--text-high)' }}>{biz.name}</span>
-                    <span style={{ fontSize: '12px', color: var(--text-med) }}>{biz.role}</span>
-                  </div>
-                  
-                  {/* The exact switch toggle from the screenshot */}
-                  <div className={`toggle-track ${biz.isActive ? 'on' : ''}`}>
-                    <div className="toggle-thumb"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="sidebar-content">
+          <div className="nav-group">
+            <div className="nav-title">Dashboard</div>
+            <Link href="/dashboard" className={`nav-link ${pathname === '/dashboard' ? 'active' : ''}`}><Icons.Home /> Overview</Link>
+            <Link href="/dashboard/wallet" className={`nav-link ${pathname === '/dashboard/wallet' ? 'active' : ''}`}><Icons.Wallet /> Balance & Payouts</Link>
+          </div>
 
-            <div className="modal-foot">
-              <button className="btn-add">+ Add New Business</button>
-            </div>
+          <div className="nav-group">
+            <div className="nav-title">Collections</div>
+            <Link href="/dashboard/links" className={`nav-link ${pathname === '/dashboard/links' ? 'active' : ''}`}><Icons.Link /> Payment Links</Link>
+            <Link href="/dashboard/invoices" className={`nav-link ${pathname === '/dashboard/invoices' ? 'active' : ''}`}><Icons.Invoice /> Invoices</Link>
+            <Link href="/dashboard/transactions" className={`nav-link ${pathname === '/dashboard/transactions' ? 'active' : ''}`}><Icons.Activity /> Transactions</Link>
+            <Link href="/dashboard/customers" className={`nav-link ${pathname === '/dashboard/customers' ? 'active' : ''}`}><Icons.Users /> Customers</Link>
+            <Link href="/dashboard/accounts" className={`nav-link ${pathname === '/dashboard/accounts' ? 'active' : ''}`}><Icons.Bank /> Virtual Accounts</Link>
+          </div>
+
+          <div className="nav-group">
+            <div className="nav-title">Disbursements</div>
+            <Link href="/dashboard/transfers" className={`nav-link ${pathname === '/dashboard/transfers' ? 'active' : ''}`}><Icons.Transfer /> Transfers</Link>
+          </div>
+
+          <div className="nav-group">
+            <div className="nav-title">Developers & Settings</div>
+            <Link href="/dashboard/api" className={`nav-link ${pathname === '/dashboard/api' ? 'active' : ''}`}><Icons.Api /> API Keys & Webhooks</Link>
+            <Link href="/dashboard/settings" className={`nav-link ${pathname === '/dashboard/settings' ? 'active' : ''}`}><Icons.Settings /> Settings</Link>
           </div>
         </div>
+      </aside>
 
+      {/* MAIN STAGE */}
+      <div className="main-stage">
+        <header className="topbar">
+          <div className="biz-switcher" onClick={() => setIsBusinessModalOpen(true)}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-high)' }}>{activeBusiness?.name}</span>
+            </div>
+            <Icons.ChevronDown />
+          </div>
+
+          <div className="topbar-actions">
+            <button className="action-icon" onClick={toggleTheme} title="Toggle Theme">
+              {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
+            </button>
+            <button className="action-icon">
+              <Icons.Bell />
+            </button>
+            <div className="user-avatar">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Profile" width="100%" height="100%" />
+            </div>
+          </div>
+        </header>
+
+        <main className="page-scroll">
+          {children}
+        </main>
       </div>
-    </>
+
+      {/* BUSINESS SWITCHER MODAL */}
+      <div className={`modal-veil ${isBusinessModalOpen ? 'open' : ''}`} onClick={() => setIsBusinessModalOpen(false)}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-head">
+            <h3>Select a Business</h3>
+            <button style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-med)', cursor: 'pointer' }} onClick={() => setIsBusinessModalOpen(false)}>✕</button>
+          </div>
+          
+          <div className="biz-list">
+            {businesses.map((biz) => (
+              <div key={biz.id} className={`biz-row ${biz.isActive ? 'active' : ''}`} onClick={() => handleSwitchBusiness(biz.id)}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '15px', fontWeight: '600', color: biz.isActive ? 'var(--brand-primary)' : 'var(--text-high)' }}>{biz.name}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-med)' }}>{biz.role}</span>
+                </div>
+                <div className={`toggle-track ${biz.isActive ? 'on' : ''}`}>
+                  <div className="toggle-thumb"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="modal-foot">
+            <button className="btn-add">+ Add New Business</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   );
 }
