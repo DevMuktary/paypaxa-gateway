@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Viewport } from 'next';
 
 export const viewport: Viewport = {
@@ -16,13 +16,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
-  // Step 2: 2FA OTP
+  // Step 2: 2FA OTP & Resend Logic
   const [otp, setOtp] = useState('');
   const [isOtpStep, setIsOtpStep] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [canResend, setCanResend] = useState(false);
   
   // UI States
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
+
+  // Handle the 30-second countdown timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isOtpStep && countdown > 0) {
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    } else if (isOtpStep && countdown === 0) {
+      setCanResend(true);
+    }
+    return () => clearTimeout(timer);
+  }, [isOtpStep, countdown]);
 
   // Handle Initial Login (Checks Password, Triggers OTP)
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -41,13 +54,40 @@ export default function LoginPage() {
 
       if (!response.ok) throw new Error(data.error || 'Invalid credentials');
 
-      // Move to OTP Step
+      // Move to OTP Step and start countdown
       setStatus({ type: 'success', message: 'A 6-digit code has been sent to your email.' });
       setIsOtpStep(true);
+      setCountdown(30);
+      setCanResend(false);
     } catch (error: any) {
       setStatus({ type: 'error', message: error.message });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Resending the OTP
+  const handleResendOtp = async () => {
+    setCanResend(false);
+    setCountdown(30);
+    setStatus({ type: 'success', message: 'Sending new code...' });
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Failed to resend code');
+
+      setStatus({ type: 'success', message: 'A new 6-digit code has been sent to your email.' });
+    } catch (error: any) {
+      setStatus({ type: 'error', message: error.message });
+      setCanResend(true); // Allow them to try again if it failed
+      setCountdown(0);
     }
   };
 
@@ -137,7 +177,7 @@ export default function LoginPage() {
               {isOtpStep ? 'Two-Factor Authentication' : 'Welcome back'}
             </h1>
             <p style={{ color: '#94A3B8', fontSize: '15px', margin: 0 }}>
-              {isOtpStep ? 'Enter the 6-digit code sent to your email.' : 'Sign in to your gateway dashboard.'}
+              {isOtpStep ? 'Enter the 6-digit code sent to your email.' : 'Sign in to your PAYPAXA account.'}
             </p>
           </div>
 
@@ -212,17 +252,33 @@ export default function LoginPage() {
                 {loading ? 'Verifying...' : 'Verify & Continue'}
               </button>
 
-              <button 
-                type="button" 
-                onClick={() => {
-                  setIsOtpStep(false);
-                  setStatus({ type: '', message: '' });
-                  setOtp('');
-                }}
-                style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '14px', cursor: 'pointer', marginTop: '8px', textDecoration: 'underline' }}
-              >
-                Back to Login
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                <div style={{ fontSize: '14px', color: '#64748B' }}>
+                  {canResend ? (
+                    <button 
+                      type="button" 
+                      onClick={handleResendOtp}
+                      style={{ background: 'none', border: 'none', color: '#3B82F6', fontWeight: '600', cursor: 'pointer', padding: 0 }}
+                    >
+                      Resend Code
+                    </button>
+                  ) : (
+                    <span>Resend code in <strong style={{ color: '#E2E8F0' }}>{countdown}s</strong></span>
+                  )}
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsOtpStep(false);
+                    setStatus({ type: '', message: '' });
+                    setOtp('');
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Back to Login
+                </button>
+              </div>
             </form>
           )}
 
