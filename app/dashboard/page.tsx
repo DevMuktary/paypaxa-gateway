@@ -30,7 +30,7 @@ export default function DashboardOverview() {
   const handleCopy = (reference: string) => {
     navigator.clipboard.writeText(reference);
     setCopiedRef(reference);
-    setTimeout(() => setCopiedRef(null), 2000); // Reset after 2 seconds
+    setTimeout(() => setCopiedRef(null), 2000); 
   };
 
   const CopyIcon = () => (
@@ -46,9 +46,22 @@ export default function DashboardOverview() {
       <style dangerouslySetInnerHTML={{__html: `
         .content-pad { padding: 40px; max-width: 1400px; margin: 0 auto; }
         
-        .welcome-title { font-size: 28px; font-weight: 800; margin: 0 0 8px 0; color: var(--text-high); letter-spacing: -0.5px; }
+        .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 16px; }
+        .welcome-title { font-size: 28px; font-weight: 800; margin: 0; color: var(--text-high); letter-spacing: -0.5px; }
         .welcome-title span { background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .welcome-sub { color: var(--text-med); font-size: 15px; margin: 0 0 40px 0; }
+        .welcome-sub { color: var(--text-med); font-size: 15px; margin: 0 0 32px 0; }
+
+        /* TEST MODE BADGE */
+        .test-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #F59E0B; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .test-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background-color: #F59E0B; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* ONBOARDING BANNER */
+        .onboarding-banner { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.05)); border: 1px dashed var(--brand-primary); border-radius: 16px; padding: 20px 24px; margin-bottom: 40px; flex-wrap: wrap; gap: 16px; }
+        .onboarding-text h3 { margin: 0 0 4px 0; font-size: 16px; color: var(--text-high); }
+        .onboarding-text p { margin: 0; font-size: 14px; color: var(--text-med); }
+        .btn-activate { padding: 10px 20px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .btn-activate:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
 
         .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px; }
         
@@ -74,7 +87,9 @@ export default function DashboardOverview() {
         .banner-label { font-size: 13px; color: var(--text-med); font-weight: 600; margin-bottom: 8px; }
         .banner-value { font-size: 24px; font-weight: 800; color: var(--text-high); }
 
-        .svg-chart-container { width: 100%; height: 260px; position: relative; }
+        /* RESPONSIVE SVG CHART */
+        .chart-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
+        .svg-chart-container { min-width: 700px; height: 260px; position: relative; } /* Min-width forces horizontal scroll on mobile */
         .svg-chart { width: 100%; height: 100%; overflow: visible; }
         .chart-grid { stroke: var(--border-color); stroke-dasharray: 4 4; stroke-width: 1; }
         .chart-line { fill: none; stroke: var(--brand-primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 4px 6px rgba(59,130,246,0.3)); }
@@ -88,7 +103,6 @@ export default function DashboardOverview() {
         .clean-table tr:hover td { background-color: var(--nav-hover); }
         .clean-table tr:last-child td { border-bottom: none; }
         
-        /* Ensuring reference cells don't truncate on desktop, but allow horizontal scroll on mobile */
         .ref-cell { display: flex; align-items: center; gap: 8px; color: var(--text-med); font-family: monospace; font-size: 13px; white-space: nowrap; }
         
         .status-badge { display: inline-flex; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; background-color: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
@@ -96,16 +110,8 @@ export default function DashboardOverview() {
         .pill-failed { background-color: rgba(244, 63, 94, 0.1); color: #F43F5E; border-color: rgba(244, 63, 94, 0.2); }
 
         /* SKELETON ANIMATIONS */
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-        .skeleton { 
-          background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-main) 50%, var(--border-color) 75%);
-          background-size: 1000px 100%;
-          animation: shimmer 2s infinite linear;
-          border-radius: 8px;
-        }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        .skeleton { background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-main) 50%, var(--border-color) 75%); background-size: 1000px 100%; animation: shimmer 2s infinite linear; border-radius: 8px; }
         .sk-title { width: 300px; height: 32px; margin-bottom: 12px; }
         .sk-sub { width: 400px; height: 16px; margin-bottom: 40px; }
         .sk-card-icon { width: 44px; height: 44px; border-radius: 12px; }
@@ -114,9 +120,13 @@ export default function DashboardOverview() {
         .sk-chart { width: 100%; height: 260px; border-radius: 16px; }
 
         @media (max-width: 768px) {
-          .content-pad { padding: 16px; }
+          .content-pad { padding: 20px 16px; }
           .stat-banner { grid-template-columns: 1fr; gap: 16px; }
           .welcome-title { font-size: 24px; }
+          .onboarding-banner { flex-direction: column; align-items: flex-start; }
+          .chart-section { padding: 20px; }
+          .ledger-header { padding: 20px; }
+          .clean-table th, .clean-table td { padding: 16px 20px; }
         }
       `}} />
 
@@ -141,16 +151,35 @@ export default function DashboardOverview() {
           </div>
         </div>
       ) : !data ? (
-        /* --- EMPTY / NO DATA STATE --- */
+        /* --- ERROR / NO DATA STATE --- */
         <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'var(--bg-panel)', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
           <h2 style={{ color: 'var(--text-high)', marginBottom: '8px' }}>No Data Found</h2>
-          <p style={{ color: 'var(--text-med)' }}>Connect your database to start tracking your revenue.</p>
+          <p style={{ color: 'var(--text-med)' }}>Please check your internet connection and try again.</p>
         </div>
       ) : (
         /* --- REAL DATA STATE --- */
         <>
-          <h1 className="welcome-title"><span>Welcome Back,</span> {data.merchantName}! 🚀</h1>
-          <p className="welcome-sub">Here is a clear overview of your business infrastructure today.</p>
+          <div className="header-row">
+            <div>
+              <h1 className="welcome-title"><span>Welcome Back,</span> {data.merchantName}! 🚀</h1>
+              <p className="welcome-sub">Here is a clear overview of your business infrastructure today.</p>
+            </div>
+            
+            {!data.isLiveEnabled && (
+              <div className="test-badge">Test Mode</div>
+            )}
+          </div>
+
+          {/* ONBOARDING BANNER (Only shows if KYC is UNVERIFIED) */}
+          {data.kycTier === 'UNVERIFIED' && (
+            <div className="onboarding-banner">
+              <div className="onboarding-text">
+                <h3>⚠️ Your account is in Test Mode</h3>
+                <p>Submit your compliance documents to activate Live payments and withdraw to your bank account.</p>
+              </div>
+              <button className="btn-activate">Complete KYC Setup →</button>
+            </div>
+          )}
 
           <div className="grid-metrics">
             {data.metrics.map((metric: any, i: number) => (
@@ -190,31 +219,34 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            <div className="svg-chart-container">
-              <svg className="svg-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.4"/>
-                    <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0"/>
-                  </linearGradient>
-                </defs>
-                
-                <line x1="0" y1="50" x2="1000" y2="50" className="chart-grid" />
-                <line x1="0" y1="100" x2="1000" y2="100" className="chart-grid" />
-                <line x1="0" y1="150" x2="1000" y2="150" className="chart-grid" />
-                <line x1="0" y1="200" x2="1000" y2="200" className="chart-grid" />
+            {/* RESPONSIVE CHART WRAPPER */}
+            <div className="chart-wrapper">
+              <div className="svg-chart-container">
+                <svg className="svg-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.4"/>
+                      <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  
+                  <line x1="0" y1="50" x2="1000" y2="50" className="chart-grid" />
+                  <line x1="0" y1="100" x2="1000" y2="100" className="chart-grid" />
+                  <line x1="0" y1="150" x2="1000" y2="150" className="chart-grid" />
+                  <line x1="0" y1="200" x2="1000" y2="200" className="chart-grid" />
 
-                <path d="M0,200 L0,150 C 150,150 250,50 400,80 C 550,110 650,20 800,60 C 900,90 950,140 1000,120 L1000,200 Z" fill="url(#areaGradient)" />
-                <path d="M0,150 C 150,150 250,50 400,80 C 550,110 650,20 800,60 C 900,90 950,140 1000,120" className="chart-line" />
-                
-                <text x="0" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Mon</text>
-                <text x="166" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Tue</text>
-                <text x="333" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Wed</text>
-                <text x="500" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Thu</text>
-                <text x="666" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Fri</text>
-                <text x="833" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Sat</text>
-                <text x="980" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Sun</text>
-              </svg>
+                  <path d="M0,200 L0,150 C 150,150 250,50 400,80 C 550,110 650,20 800,60 C 900,90 950,140 1000,120 L1000,200 Z" fill="url(#areaGradient)" />
+                  <path d="M0,150 C 150,150 250,50 400,80 C 550,110 650,20 800,60 C 900,90 950,140 1000,120" className="chart-line" />
+                  
+                  <text x="0" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Mon</text>
+                  <text x="166" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Tue</text>
+                  <text x="333" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Wed</text>
+                  <text x="500" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Thu</text>
+                  <text x="666" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Fri</text>
+                  <text x="833" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Sat</text>
+                  <text x="980" y="230" fill="var(--text-med)" fontSize="13" fontWeight="500">Sun</text>
+                </svg>
+              </div>
             </div>
           </div>
 
