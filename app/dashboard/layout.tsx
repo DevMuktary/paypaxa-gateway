@@ -9,18 +9,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const [businesses, setBusinesses] = useState([
-    { id: 1, name: 'Quadrox Tech', role: 'Owner', isActive: true },
-    { id: 2, name: 'Smart9ja', role: 'Admin', isActive: false },
-    { id: 3, name: 'FYNAX TECHNOLOGY', role: 'Developer', isActive: false },
-  ]);
+  // Real Data States
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [isLoadingBiz, setIsLoadingBiz] = useState(true);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('paypaxa-theme') || 'dark';
     setTheme(savedTheme as 'light' | 'dark');
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Fetch the real businesses from our new API
+    const fetchBusinesses = async () => {
+      try {
+        const res = await fetch('/api/merchant/businesses');
+        if (res.ok) {
+          const data = await res.json();
+          setBusinesses(data.businesses || []);
+        }
+      } catch (error) {
+        console.error("Failed to load businesses");
+      } finally {
+        setIsLoadingBiz(false);
+      }
+    };
+    
+    fetchBusinesses();
   }, []);
 
   const toggleTheme = () => {
@@ -30,12 +45,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  const handleSwitchBusiness = (id: number) => {
+  const handleSwitchBusiness = (id: string) => {
     setBusinesses(businesses.map(b => ({ ...b, isActive: b.id === id })));
     setIsBusinessModalOpen(false);
+    // In the future, this would trigger a global state update to refresh the dashboard
   };
 
-  const activeBusiness = businesses.find(b => b.isActive);
+  const activeBusiness = businesses.find(b => b.isActive) || businesses[0];
 
   const Icons = {
     Menu: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>,
@@ -53,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     Chart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>,
     Api: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>,
     Team: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
-    Settings: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51z"></path></svg>,
+    Settings: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
     LifeBuoy: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line><line x1="14.83" y1="9.17" x2="18.36" y2="5.64"></line><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line></svg>,
     BookOpen: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>,
     ChevronDown: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
@@ -98,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         .dashboard-shell { display: flex; height: 100vh; overflow: hidden; position: relative; }
 
-        /* SIDEBAR (Responsive) */
+        /* SIDEBAR */
         .sidebar { width: 270px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .brand-zone { height: 76px; padding: 0 28px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
         .sidebar-content { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 32px; }
@@ -120,6 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         .biz-switcher { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 1px solid var(--border-color); background: var(--bg-panel); }
         .biz-switcher:hover { border-color: var(--text-low); }
+        .biz-avatar { width: 28px; height: 28px; border-radius: 6px; background-color: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
         
         .topbar-actions { display: flex; align-items: center; gap: 20px; }
         .action-icon { background: none; border: none; color: var(--text-med); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
@@ -137,7 +154,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           .sidebar.open { transform: translateX(0); }
           .sidebar-overlay.open { display: block; opacity: 1; pointer-events: auto; }
           .topbar { padding: 0 16px; }
-          .biz-switcher span { display: none; } /* Hide text on small screens, keep chevron */
+          .biz-switcher span { display: none; } /* Hide text on small screens, keep chevron/avatar */
         }
 
         /* MODAL */
@@ -217,16 +234,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="main-stage">
         <header className="topbar">
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            {/* The Hamburger Menu */}
             <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
               <Icons.Menu />
             </button>
 
             <div className="biz-switcher" onClick={() => setIsBusinessModalOpen(true)}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-high)' }}>{activeBusiness?.name}</span>
-              </div>
-              <Icons.ChevronDown />
+              {isLoadingBiz ? (
+                <span style={{ fontSize: '13px', color: 'var(--text-med)' }}>Loading...</span>
+              ) : activeBusiness ? (
+                <>
+                  <div className="biz-avatar">{activeBusiness.name.charAt(0)}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-high)' }}>{activeBusiness.name}</span>
+                  </div>
+                  <Icons.ChevronDown />
+                </>
+              ) : (
+                <span style={{ fontSize: '13px', color: 'var(--text-med)' }}>No Business Found</span>
+              )}
             </div>
           </div>
 
@@ -252,26 +277,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className={`modal-veil ${isBusinessModalOpen ? 'open' : ''}`} onClick={() => setIsBusinessModalOpen(false)}>
         <div className="modal-box" onClick={(e) => e.stopPropagation()}>
           <div className="modal-head">
-            <h3>Select a Business</h3>
+            <h3>Switch Business</h3>
             <button style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-med)', cursor: 'pointer' }} onClick={() => setIsBusinessModalOpen(false)}>✕</button>
           </div>
           
           <div className="biz-list">
-            {businesses.map((biz) => (
+            {businesses.length > 0 ? businesses.map((biz) => (
               <div key={biz.id} className={`biz-row ${biz.isActive ? 'active' : ''}`} onClick={() => handleSwitchBusiness(biz.id)}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: '600', color: biz.isActive ? 'var(--brand-primary)' : 'var(--text-high)' }}>{biz.name}</span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-med)' }}>{biz.role}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className="biz-avatar" style={{ width: '36px', height: '36px', fontSize: '16px' }}>{biz.name.charAt(0)}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '600', color: biz.isActive ? 'var(--brand-primary)' : 'var(--text-high)' }}>{biz.name}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-med)' }}>{biz.role}</span>
+                  </div>
                 </div>
                 <div className={`toggle-track ${biz.isActive ? 'on' : ''}`}>
                   <div className="toggle-thumb"></div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-med)' }}>No businesses found.</div>
+            )}
           </div>
 
           <div className="modal-foot">
-            <button className="btn-add">+ Add New Business</button>
+            <button className="btn-add" disabled={businesses.length >= 3}>
+              {businesses.length >= 3 ? 'Limit of 3 Businesses Reached' : '+ Add New Business'}
+            </button>
           </div>
         </div>
       </div>
