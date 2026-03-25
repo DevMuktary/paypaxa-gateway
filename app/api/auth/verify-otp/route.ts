@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { encrypt } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
@@ -12,13 +14,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and OTP code are required' }, { status: 400 });
     }
 
-    // Force clean the inputs to prevent invisible space or capitalization errors
     const cleanOtp = otp.toString().trim();
     const cleanEmail = email.toString().trim().toLowerCase();
 
     const user = await prisma.user.findUnique({
-      where: { email: cleanEmail },
-      include: { merchant: true } 
+      where: { email: cleanEmail }
     });
 
     if (!user) {
@@ -44,6 +44,23 @@ export async function POST(request: Request) {
         twoFactorOtp: null,
         twoFactorExpiry: null
       }
+    });
+
+    // --- SECURE SESSION CREATION ---
+    const sessionData = {
+      userId: user.id,
+      email: user.email,
+    };
+
+    const token = await encrypt(sessionData);
+
+    // Set the secure, HTTP-Only cookie
+    cookies().set('paypaxa_session', token, {
+      httpOnly: true, // Prevents JavaScript from reading the cookie (Stops XSS attacks)
+      secure: process.env.NODE_ENV === 'production', // Requires HTTPS in production
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 24 Hours
+      path: '/',
     });
 
     return NextResponse.json({ message: 'Login successful' }, { status: 200 });
