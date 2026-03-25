@@ -17,8 +17,10 @@ export async function POST(request: Request) {
     const cleanOtp = otp.toString().trim();
     const cleanEmail = email.toString().trim().toLowerCase();
 
+    // Find the user and include their businesses
     const user = await prisma.user.findUnique({
-      where: { email: cleanEmail }
+      where: { email: cleanEmail },
+      include: { businesses: true } 
     });
 
     if (!user) {
@@ -37,12 +39,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid 6-digit code. Please try again.' }, { status: 401 });
     }
 
-    // Code is valid! Clear the OTP to prevent replay attacks
+    // Code is valid! Clear the OTP and mark email as verified
     await prisma.user.update({
       where: { id: user.id },
       data: {
         twoFactorOtp: null,
-        twoFactorExpiry: null
+        twoFactorExpiry: null,
+        isEmailVerified: true
       }
     });
 
@@ -54,10 +57,9 @@ export async function POST(request: Request) {
 
     const token = await encrypt(sessionData);
 
-    // Set the secure, HTTP-Only cookie
     cookies().set('paypaxa_session', token, {
-      httpOnly: true, // Prevents JavaScript from reading the cookie (Stops XSS attacks)
-      secure: process.env.NODE_ENV === 'production', // Requires HTTPS in production
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
       sameSite: 'lax',
       maxAge: 60 * 60 * 24, // 24 Hours
       path: '/',
