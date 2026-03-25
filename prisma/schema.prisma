@@ -7,62 +7,120 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- ENUMS (Strict Data Rules) ---
+
+enum Environment {
+  SANDBOX
+  LIVE
+}
+
+enum KycTier {
+  UNVERIFIED  // Cannot process payments yet
+  STARTER     // Basic KYC (NIN/BVN) - Processing limits apply
+  REGISTERED  // Full Corporate KYC (CAC) - Unlimited processing
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+// --- MODELS ---
+
+// 1. The Gateway User (The human logging in)
 model User {
-  id                 String    @id @default(uuid())
-  merchantId         String?   @unique
-  merchant           Merchant? @relation(fields: [merchantId], references: [id])
-  firstName          String
-  lastName           String
-  email              String    @unique
-  phoneNumber        String
-  passwordHash       String
-  isDeveloper        Boolean   @default(false)
-  isEmailVerified    Boolean   @default(false)
-  verificationToken  String?
-  verificationExpiry DateTime?
-  twoFactorOtp       String?
-  twoFactorExpiry    DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id              String     @id @default(uuid())
+  email           String     @unique
+  firstName       String
+  lastName        String?
+  passwordHash    String
+  
+  // Security & Auth
+  isEmailVerified Boolean    @default(false)
+  twoFactorOtp    String?
+  twoFactorExpiry DateTime?
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // A single user can own multiple businesses
+  businesses      Business[] 
 }
 
-model Merchant {
-  id           String   @id @default(uuid())
-  businessName String
-  country      String   @default("Nigeria")
-  businessType String   @default("STARTER") // "STARTER" or "REGISTERED"
-  kycTier      Int      @default(1)
-  apiPublicKey String   @unique
-  apiSecretKey String   @unique
-  user         User?
-  wallets      Wallet[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+// 2. The Merchant Business (The entity processing payments)
+model Business {
+  id              String     @id @default(uuid())
+  userId          String
+  name            String
+  email           String     @unique // Business support email
+  
+  // Gateway State
+  kycTier         KycTier    @default(UNVERIFIED)
+  isLiveEnabled   Boolean    @default(false) // Locked to Sandbox until KYC passes
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeys         ApiKey[]
+  transactions    Transaction[]
+  customers       Customer[]
 }
 
-model Wallet {
-  id               String        @id @default(uuid())
-  merchantId       String
-  merchant         Merchant      @relation(fields: [merchantId], references: [id])
-  availableBalance Decimal       @default(0.00)
-  ledgerBalance    Decimal       @default(0.00)
-  currency         String        @default("NGN")
-  transactions     Transaction[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+// 3. Developer API Keys (Separated by Sandbox/Live)
+model ApiKey {
+  id              String      @id @default(uuid())
+  businessId      String
+  environment     Environment @default(SANDBOX)
+  
+  publicKey       String      @unique // e.g., pk_test_12345
+  secretKeyHash   String      // We only store the hash of the secret key for security
+  
+  createdAt       DateTime    @default(now())
+  lastUsedAt      DateTime?
+
+  business        Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
+// 4. The End Customer (The person paying the Merchant)
+model Customer {
+  id              String      @id @default(uuid())
+  businessId      String
+  email           String
+  firstName       String?
+  lastName        String?
+  phone           String?
+  
+  createdAt       DateTime    @default(now())
+
+  business        Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+
+  // A business cannot have duplicate customer emails
+  @@unique([businessId, email]) 
+}
+
+// 5. The Financial Ledger (Transactions)
 model Transaction {
-  id          String   @id @default(uuid())
-  walletId    String
-  wallet      Wallet   @relation(fields: [walletId], references: [id])
-  reference   String   @unique
-  amount      Decimal
-  fee         Decimal
-  netAmount   Decimal
-  type        String   
-  status      String   
-  processor   String   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String            @id @default(uuid())
+  businessId      String
+  customerId      String?
+  
+  environment     Environment       @default(SANDBOX)
+  amount          Decimal           @db.Decimal(12, 2) // Precise financial decimal
+  currency        String            @default("NGN")
+  reference       String            @unique // The merchant's custom reference
+  gatewayRef      String            @unique // PAYPAXA's internal reference
+  
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   String?           // e.g., "CARD", "TRANSFER", "USSD"
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  business        Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer        Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
 }
