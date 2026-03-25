@@ -1,26 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Real Data States
+  // New Interactive States
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [isLoadingBiz, setIsLoadingBiz] = useState(true);
+
+  // Fake notifications for the UI
+  const notifications = [
+    { id: 1, title: 'Successful Login', desc: 'New login from Chrome on Mac OS', time: 'Just now', unread: true },
+    { id: 2, title: 'API Key Created', desc: 'A new Sandbox Secret Key was generated', time: '2 hours ago', unread: false },
+    { id: 3, title: 'Welcome to PAYPAXA', desc: 'Complete your KYC to start receiving live payments.', time: '1 day ago', unread: false },
+  ];
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('paypaxa-theme') || 'dark';
     setTheme(savedTheme as 'light' | 'dark');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Fetch the real businesses from our new API
     const fetchBusinesses = async () => {
       try {
         const res = await fetch('/api/merchant/businesses');
@@ -48,7 +58,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleSwitchBusiness = (id: string) => {
     setBusinesses(businesses.map(b => ({ ...b, isActive: b.id === id })));
     setIsBusinessModalOpen(false);
-    // In the future, this would trigger a global state update to refresh the dashboard
+  };
+
+  const handleLogout = async () => {
+    // In a real app, you'd call an API to clear the HTTP-only cookie here
+    // await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
   };
 
   const activeBusiness = businesses.find(b => b.isActive) || businesses[0];
@@ -76,6 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     Moon: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
     Sun: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line></svg>,
     Bell: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>,
+    LogOut: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
   };
 
   return (
@@ -93,6 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           --nav-active: #EFF6FF;
           --glass-bg: rgba(255, 255, 255, 0.8);
           --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+          --shadow-dropdown: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         [data-theme="dark"] {
@@ -107,6 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           --nav-active: rgba(59, 130, 246, 0.1);
           --glass-bg: rgba(11, 17, 33, 0.8);
           --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
         }
 
         html, body { margin: 0; padding: 0; background-color: var(--bg-main); font-family: 'Inter', system-ui, sans-serif; color: var(--text-high); transition: background-color 0.3s; }
@@ -139,10 +157,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .biz-avatar { width: 28px; height: 28px; border-radius: 6px; background-color: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
         
         .topbar-actions { display: flex; align-items: center; gap: 20px; }
-        .action-icon { background: none; border: none; color: var(--text-med); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .action-icon:hover { background-color: var(--nav-hover); color: var(--text-high); }
         
-        .user-avatar { width: 36px; height: 36px; border-radius: 10px; background-color: var(--border-color); overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; }
+        /* NEW: Header Elements & Dropdowns */
+        .header-item-wrapper { position: relative; }
+        .action-icon { background: none; border: none; color: var(--text-med); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
+        .action-icon:hover { background-color: var(--nav-hover); color: var(--text-high); }
+        .notification-dot { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; background-color: #EF4444; border-radius: 50%; border: 2px solid var(--bg-panel); }
+        
+        .user-avatar { width: 36px; height: 36px; border-radius: 10px; background-color: var(--border-color); overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .user-avatar:hover { border-color: var(--brand-primary); }
+
+        .dropdown-menu { position: absolute; top: calc(100% + 8px); right: 0; width: 280px; background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-dropdown); opacity: 0; pointer-events: none; transform: translateY(-10px); transition: 0.2s; z-index: 100; overflow: hidden; }
+        .dropdown-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        
+        .dropdown-header { padding: 16px; border-bottom: 1px solid var(--border-color); }
+        .dropdown-title { font-size: 14px; font-weight: 700; color: var(--text-high); margin: 0; }
+        
+        .dropdown-list { max-height: 300px; overflow-y: auto; }
+        .notification-item { padding: 16px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .notification-item:hover { background-color: var(--nav-hover); }
+        .notification-item:last-child { border-bottom: none; }
+        .notif-title { font-size: 13px; font-weight: 600; color: var(--text-high); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .notif-unread-dot { width: 6px; height: 6px; background-color: var(--brand-primary); border-radius: 50%; }
+        .notif-desc { font-size: 12px; color: var(--text-med); margin: 0 0 8px 0; line-height: 1.4; }
+        .notif-time { font-size: 11px; color: var(--text-low); }
+
+        .profile-menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-high); font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; text-decoration: none; }
+        .profile-menu-item:hover { background-color: var(--nav-hover); color: var(--brand-primary); }
+        .profile-menu-item.danger { color: #EF4444; border-top: 1px solid var(--border-color); margin-top: 4px; }
+        .profile-menu-item.danger:hover { background-color: rgba(239, 68, 68, 0.1); color: #EF4444; }
 
         /* MOBILE OVERLAY & TOGGLE */
         .mobile-menu-btn { display: none; background: none; border: none; color: var(--text-high); cursor: pointer; padding: 8px; margin-right: 8px; }
@@ -154,7 +197,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           .sidebar.open { transform: translateX(0); }
           .sidebar-overlay.open { display: block; opacity: 1; pointer-events: auto; }
           .topbar { padding: 0 16px; }
-          .biz-switcher span { display: none; } /* Hide text on small screens, keep chevron/avatar */
+          .biz-switcher span { display: none; }
+          .dropdown-menu { position: fixed; top: 76px; left: 16px; right: 16px; width: auto; }
         }
 
         /* MODAL */
@@ -185,6 +229,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* MOBILE OVERLAY */}
       <div className={`sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
+
+      {/* INVISIBLE CLICK CATCHER FOR DROPDOWNS */}
+      {(isProfileOpen || isNotificationsOpen) && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => { setIsProfileOpen(false); setIsNotificationsOpen(false); }}></div>
+      )}
 
       <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="brand-zone">
@@ -259,12 +308,58 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button className="action-icon" onClick={toggleTheme} title="Toggle Theme">
               {theme === 'light' ? <Icons.Moon /> : <Icons.Sun />}
             </button>
-            <button className="action-icon">
-              <Icons.Bell />
-            </button>
-            <div className="user-avatar">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Profile" width="100%" height="100%" />
+            
+            {/* NOTIFICATIONS DROPDOWN */}
+            <div className="header-item-wrapper">
+              <button className="action-icon" onClick={() => { setIsNotificationsOpen(!isNotificationsOpen); setIsProfileOpen(false); }}>
+                <Icons.Bell />
+                <div className="notification-dot"></div>
+              </button>
+              
+              <div className={`dropdown-menu ${isNotificationsOpen ? 'open' : ''}`}>
+                <div className="dropdown-header">
+                  <h4 className="dropdown-title">Notifications</h4>
+                </div>
+                <div className="dropdown-list">
+                  {notifications.map(notif => (
+                    <div key={notif.id} className="notification-item">
+                      <div className="notif-title">
+                        {notif.title}
+                        {notif.unread && <div className="notif-unread-dot"></div>}
+                      </div>
+                      <p className="notif-desc">{notif.desc}</p>
+                      <span className="notif-time">{notif.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* PROFILE DROPDOWN */}
+            <div className="header-item-wrapper">
+              <div className="user-avatar" onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotificationsOpen(false); }}>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Profile" width="100%" height="100%" />
+              </div>
+              
+              <div className={`dropdown-menu ${isProfileOpen ? 'open' : ''}`} style={{ width: '220px' }}>
+                <div className="dropdown-header">
+                  <h4 className="dropdown-title">My Account</h4>
+                  <span style={{ fontSize: '12px', color: 'var(--text-med)' }}>mukhtar@example.com</span>
+                </div>
+                <div style={{ padding: '8px 0' }}>
+                  <Link href="/dashboard/settings" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                    <Icons.Settings /> Account Settings
+                  </Link>
+                  <Link href="/dashboard/team" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                    <Icons.Team /> Manage Team
+                  </Link>
+                  <div className="profile-menu-item danger" onClick={handleLogout}>
+                    <Icons.LogOut /> Sign Out
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </header>
 
