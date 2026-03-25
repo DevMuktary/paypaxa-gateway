@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function DashboardOverview() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
+  
+  // Modal States
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [isPaymentLinkModalOpen, setIsPaymentLinkModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -33,13 +38,9 @@ export default function DashboardOverview() {
     setTimeout(() => setCopiedRef(null), 2000); 
   };
 
-  const CopyIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-  );
-
-  const CheckIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-  );
+  const CopyIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>;
+  const CheckIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+  const ShieldIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>;
 
   return (
     <div className="content-pad">
@@ -51,6 +52,9 @@ export default function DashboardOverview() {
         .welcome-title span { background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .welcome-sub { color: var(--text-med); font-size: 15px; margin: 0 0 32px 0; }
 
+        .btn-primary { padding: 10px 20px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; white-space: nowrap; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+
         /* TEST MODE BADGE */
         .test-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #F59E0B; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .test-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background-color: #F59E0B; animation: pulse 2s infinite; }
@@ -60,16 +64,11 @@ export default function DashboardOverview() {
         .onboarding-banner { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.05)); border: 1px dashed var(--brand-primary); border-radius: 16px; padding: 20px 24px; margin-bottom: 40px; flex-wrap: wrap; gap: 16px; }
         .onboarding-text h3 { margin: 0 0 4px 0; font-size: 16px; color: var(--text-high); }
         .onboarding-text p { margin: 0; font-size: 14px; color: var(--text-med); }
-        .btn-activate { padding: 10px 20px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .btn-activate:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
 
         .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px; }
-        
         .premium-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 20px; padding: 28px; position: relative; overflow: hidden; box-shadow: var(--shadow-soft); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; gap: 16px; }
         .premium-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-modal); border-color: rgba(255,255,255,0.1); }
-        
         .card-glow { position: absolute; top: 0; right: 0; width: 120px; height: 120px; border-radius: 50%; filter: blur(40px); opacity: 0.15; z-index: 0; }
-        
         .card-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.1); }
         .card-label { font-size: 14px; font-weight: 600; color: var(--text-med); z-index: 1; position: relative; text-transform: uppercase; letter-spacing: 0.5px; }
         .card-value { font-size: 32px; font-weight: 800; color: var(--text-high); z-index: 1; position: relative; letter-spacing: -1px; }
@@ -89,7 +88,7 @@ export default function DashboardOverview() {
 
         /* RESPONSIVE SVG CHART */
         .chart-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
-        .svg-chart-container { min-width: 700px; height: 260px; position: relative; } /* Min-width forces horizontal scroll on mobile */
+        .svg-chart-container { min-width: 700px; height: 260px; position: relative; }
         .svg-chart { width: 100%; height: 100%; overflow: visible; }
         .chart-grid { stroke: var(--border-color); stroke-dasharray: 4 4; stroke-width: 1; }
         .chart-line { fill: none; stroke: var(--brand-primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 4px 6px rgba(59,130,246,0.3)); }
@@ -119,6 +118,26 @@ export default function DashboardOverview() {
         .sk-card-val { width: 180px; height: 32px; margin-top: 12px; }
         .sk-chart { width: 100%; height: 260px; border-radius: 16px; }
 
+        /* INTERACTIVE MODALS */
+        .action-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .action-modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .action-modal { background: var(--bg-panel); width: 100%; max-width: 500px; border-radius: 24px; box-shadow: var(--shadow-modal); border: 1px solid var(--border-color); transform: translateY(20px) scale(0.95); transition: 0.3s; overflow: hidden; }
+        .action-modal-overlay.open .action-modal { transform: translateY(0) scale(1); }
+        .modal-header { padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 18px; font-weight: 700; margin: 0; color: var(--text-high); }
+        .modal-body { padding: 24px; }
+        
+        /* Form Inputs */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-high); margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 12px 16px; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-high); font-size: 15px; outline: none; transition: 0.2s; }
+        .form-input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        
+        .kyc-step { display: flex; gap: 16px; margin-bottom: 24px; }
+        .kyc-step-number { width: 32px; height: 32px; border-radius: 50%; background: rgba(59, 130, 246, 0.1); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .kyc-step-content h4 { margin: 0 0 4px 0; color: var(--text-high); font-size: 15px; }
+        .kyc-step-content p { margin: 0; color: var(--text-med); font-size: 13px; line-height: 1.5; }
+
         @media (max-width: 768px) {
           .content-pad { padding: 20px 16px; }
           .stat-banner { grid-template-columns: 1fr; gap: 16px; }
@@ -127,6 +146,7 @@ export default function DashboardOverview() {
           .chart-section { padding: 20px; }
           .ledger-header { padding: 20px; }
           .clean-table th, .clean-table td { padding: 16px 20px; }
+          .action-modal { max-width: 90%; }
         }
       `}} />
 
@@ -135,7 +155,6 @@ export default function DashboardOverview() {
         <div>
           <div className="skeleton sk-title"></div>
           <div className="skeleton sk-sub"></div>
-          
           <div className="grid-metrics">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="premium-card">
@@ -145,10 +164,7 @@ export default function DashboardOverview() {
               </div>
             ))}
           </div>
-
-          <div className="chart-section">
-            <div className="skeleton sk-chart"></div>
-          </div>
+          <div className="chart-section"><div className="skeleton sk-chart"></div></div>
         </div>
       ) : !data ? (
         /* --- ERROR / NO DATA STATE --- */
@@ -165,9 +181,10 @@ export default function DashboardOverview() {
               <p className="welcome-sub">Here is a clear overview of your business infrastructure today.</p>
             </div>
             
-            {!data.isLiveEnabled && (
-              <div className="test-badge">Test Mode</div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {!data.isLiveEnabled && <div className="test-badge">Test Mode</div>}
+              <button className="btn-primary" onClick={() => setIsPaymentLinkModalOpen(true)}>+ New Payment Link</button>
+            </div>
           </div>
 
           {/* ONBOARDING BANNER (Only shows if KYC is UNVERIFIED) */}
@@ -177,7 +194,7 @@ export default function DashboardOverview() {
                 <h3>⚠️ Your account is in Test Mode</h3>
                 <p>Submit your compliance documents to activate Live payments and withdraw to your bank account.</p>
               </div>
-              <button className="btn-activate">Complete KYC Setup →</button>
+              <button className="btn-primary" onClick={() => setIsKycModalOpen(true)}>Complete KYC Setup →</button>
             </div>
           )}
 
@@ -219,7 +236,6 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            {/* RESPONSIVE CHART WRAPPER */}
             <div className="chart-wrapper">
               <div className="svg-chart-container">
                 <svg className="svg-chart" viewBox="0 0 1000 200" preserveAspectRatio="none">
@@ -253,6 +269,7 @@ export default function DashboardOverview() {
           <div className="ledger-panel">
             <div className="ledger-header">
               <h2 className="chart-title">Recent Transactions</h2>
+              <Link href="/dashboard/transactions" style={{ color: 'var(--brand-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>View All →</Link>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table className="clean-table">
@@ -311,6 +328,91 @@ export default function DashboardOverview() {
           </div>
         </>
       )}
+
+      {/* --- KYC MODAL --- */}
+      <div className={`action-modal-overlay ${isKycModalOpen ? 'open' : ''}`} onClick={() => setIsKycModalOpen(false)}>
+        <div className="action-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ color: 'var(--brand-primary)' }}><ShieldIcon /></div>
+              <h3>Business Verification (KYC)</h3>
+            </div>
+            <button style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-med)', cursor: 'pointer' }} onClick={() => setIsKycModalOpen(false)}>✕</button>
+          </div>
+          <div className="modal-body">
+            <p style={{ color: 'var(--text-med)', marginBottom: '24px', fontSize: '14px', lineHeight: '1.5' }}>
+              To protect our ecosystem and comply with regulations, you need to verify your business before receiving live payments.
+            </p>
+            
+            <div className="kyc-step">
+              <div className="kyc-step-number">1</div>
+              <div className="kyc-step-content">
+                <h4>Personal Identity</h4>
+                <p>Provide your BVN or NIN to verify your identity as the business owner.</p>
+              </div>
+            </div>
+            
+            <div className="kyc-step">
+              <div className="kyc-step-number">2</div>
+              <div className="kyc-step-content">
+                <h4>Business Documents</h4>
+                <p>Upload your CAC registration certificate (if applicable) for higher limits.</p>
+              </div>
+            </div>
+            
+            <div className="kyc-step">
+              <div className="kyc-step-number">3</div>
+              <div className="kyc-step-content">
+                <h4>Settlement Account</h4>
+                <p>Add the bank account where your funds will be withdrawn.</p>
+              </div>
+            </div>
+
+            <button className="btn-primary" style={{ width: '100%', marginTop: '16px', padding: '14px' }}>
+              Start Verification
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* --- NEW PAYMENT LINK MODAL --- */}
+      <div className={`action-modal-overlay ${isPaymentLinkModalOpen ? 'open' : ''}`} onClick={() => setIsPaymentLinkModalOpen(false)}>
+        <div className="action-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Create Payment Link</h3>
+            <button style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-med)', cursor: 'pointer' }} onClick={() => setIsPaymentLinkModalOpen(false)}>✕</button>
+          </div>
+          <div className="modal-body">
+            <div className="form-group">
+              <label className="form-label">Link Name / Purpose</label>
+              <input type="text" className="form-input" placeholder="e.g., Web Design Service" />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Amount (₦)</label>
+              <input type="number" className="form-input" placeholder="Leave blank to let customer decide" />
+            </div>
+            
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input type="checkbox" id="collectPhone" style={{ width: '16px', height: '16px' }} />
+              <label htmlFor="collectPhone" style={{ color: 'var(--text-high)', fontSize: '14px' }}>Collect customer phone number</label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
+              <button 
+                style={{ flex: 1, padding: '12px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-high)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+                onClick={() => setIsPaymentLinkModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button className="btn-primary" style={{ flex: 1, padding: '12px' }}>
+                Create Link
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
