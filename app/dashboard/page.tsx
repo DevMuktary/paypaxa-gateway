@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 export default function DashboardOverview() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedRef, setCopiedRef] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -19,8 +20,6 @@ export default function DashboardOverview() {
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
-        // THE CRITICAL FIX: This forces the loading screen to turn off 
-        // after the API is done (or after the 1.5s delay we set).
         setIsLoading(false); 
       }
     };
@@ -28,8 +27,18 @@ export default function DashboardOverview() {
     fetchDashboardData();
   }, []);
 
+  const handleCopy = (reference: string) => {
+    navigator.clipboard.writeText(reference);
+    setCopiedRef(reference);
+    setTimeout(() => setCopiedRef(null), 2000); // Reset after 2 seconds
+  };
+
   const CopyIcon = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+  );
+
+  const CheckIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
   );
 
   return (
@@ -74,10 +83,13 @@ export default function DashboardOverview() {
         .ledger-header { padding: 24px 32px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         
         .clean-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .clean-table th { padding: 16px 32px; font-size: 12px; font-weight: 600; color: var(--text-low); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.02); }
+        .clean-table th { padding: 16px 32px; font-size: 12px; font-weight: 600; color: var(--text-low); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.02); white-space: nowrap; }
         .clean-table td { padding: 20px 32px; font-size: 14px; color: var(--text-high); border-bottom: 1px solid var(--border-color); }
         .clean-table tr:hover td { background-color: var(--nav-hover); }
         .clean-table tr:last-child td { border-bottom: none; }
+        
+        /* Ensuring reference cells don't truncate on desktop, but allow horizontal scroll on mobile */
+        .ref-cell { display: flex; align-items: center; gap: 8px; color: var(--text-med); font-family: monospace; font-size: 13px; white-space: nowrap; }
         
         .status-badge { display: inline-flex; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; background-color: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
         .pill-pending { background-color: rgba(245, 158, 11, 0.1); color: #F59E0B; border-color: rgba(245, 158, 11, 0.2); }
@@ -102,8 +114,9 @@ export default function DashboardOverview() {
         .sk-chart { width: 100%; height: 260px; border-radius: 16px; }
 
         @media (max-width: 768px) {
-          .content-pad { padding: 20px; }
+          .content-pad { padding: 16px; }
           .stat-banner { grid-template-columns: 1fr; gap: 16px; }
+          .welcome-title { font-size: 24px; }
         }
       `}} />
 
@@ -128,10 +141,10 @@ export default function DashboardOverview() {
           </div>
         </div>
       ) : !data ? (
-        /* --- ERROR STATE --- */
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-med)' }}>
-          <h2 style={{ color: 'var(--text-high)' }}>Dashboard Unavailable</h2>
-          <p>We could not fetch the dashboard data. Please check your API route.</p>
+        /* --- EMPTY / NO DATA STATE --- */
+        <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'var(--bg-panel)', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+          <h2 style={{ color: 'var(--text-high)', marginBottom: '8px' }}>No Data Found</h2>
+          <p style={{ color: 'var(--text-med)' }}>Connect your database to start tracking your revenue.</p>
         </div>
       ) : (
         /* --- REAL DATA STATE --- */
@@ -169,11 +182,11 @@ export default function DashboardOverview() {
               </div>
               <div className="banner-item">
                 <div className="banner-label">Total Transactions</div>
-                <div className="banner-value" style={{ color: 'var(--text-high)' }}>8,432</div>
+                <div className="banner-value" style={{ color: 'var(--text-high)' }}>{data.totalTransactionsCount}</div>
               </div>
               <div className="banner-item">
                 <div className="banner-label">Pending Settlement</div>
-                <div className="banner-value" style={{ color: '#F59E0B' }}>₦45,000.00</div>
+                <div className="banner-value" style={{ color: '#F59E0B' }}>₦0.00</div>
               </div>
             </div>
 
@@ -221,27 +234,45 @@ export default function DashboardOverview() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.transactions.map((txn: any, idx: number) => (
-                    <tr key={idx}>
-                      <td style={{ fontWeight: '600' }}>{txn.customer}</td>
-                      <td style={{ fontWeight: '700', fontFamily: 'monospace', fontSize: '15px' }}>{txn.amount}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-med)', fontFamily: 'monospace' }}>
-                          {txn.id}
-                          <button style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', padding: 0 }}><CopyIcon /></button>
-                        </div>
+                  {data.transactions && data.transactions.length > 0 ? (
+                    data.transactions.map((txn: any, idx: number) => (
+                      <tr key={idx}>
+                        <td style={{ fontWeight: '600' }}>{txn.customerName}</td>
+                        <td style={{ fontWeight: '700', fontFamily: 'monospace', fontSize: '15px' }}>
+                          ₦{txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                        <td>
+                          <div className="ref-cell">
+                            {txn.reference}
+                            <button 
+                              style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', padding: 0 }} 
+                              onClick={() => handleCopy(txn.reference)}
+                              title="Copy Reference"
+                            >
+                              {copiedRef === txn.reference ? <CheckIcon /> : <CopyIcon />}
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${
+                            txn.status === 'PENDING' ? 'pill-pending' : 
+                            txn.status === 'FAILED' ? 'pill-failed' : ''
+                          }`}>
+                            {txn.status}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--text-med)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                          {new Date(txn.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-med)' }}>
+                        No transactions found.
                       </td>
-                      <td>
-                        <span className={`status-badge ${
-                          txn.status === 'Pending' ? 'pill-pending' : 
-                          txn.status === 'Failed' ? 'pill-failed' : ''
-                        }`}>
-                          {txn.status}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--text-med)', fontSize: '13px' }}>{txn.date}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
