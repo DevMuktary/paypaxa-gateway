@@ -4,28 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/client": "^5.0.0",
+    "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
-    "next": "^14.0.0",
+    "jose": "^5.2.3",
+    "next": "14.2.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zeptomail": "^3.0.0",
-    "jose": "^5.2.3"
+    "zeptomail": "^3.1.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "prisma": "^5.0.0",
-    "typescript": "^5.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.3.0",
+    "prisma": "^5.22.0",
+    "typescript": "^5.4.5"
   }
 }
