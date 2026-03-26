@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import Link from 'next/link';
 
@@ -10,18 +10,22 @@ export default function CompliancePage() {
   const [isClient, setIsClient] = useState(false);
 
   const webcamRef = useRef<Webcam>(null);
-  const [livenessPhase, setLivenessPhase] = useState(0);
+  const [livenessState, setLivenessState] = useState<'READY' | 'SCANNING' | 'COUNTDOWN_3' | 'COUNTDOWN_2' | 'COUNTDOWN_1' | 'REVIEW'>('READY');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    dob: '',
+    phone: '',
     bvn: '',
     consent: false,
     industry: '',
     volume: '',
     supportEmail: '',
     disputeEmail: '',
-    phone: '',
     website: '',
+    corporateName: '',
     rcNumber: '',
     tin: '',
     bankCode: '',
@@ -35,31 +39,24 @@ export default function CompliancePage() {
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
 
-  const livenessInstructions = [
-    "Position your face inside the oval.",
-    "Slowly turn your head to the LEFT.",
-    "Now, turn your head to the RIGHT.",
-    "Look straight, smile and open your mouth.",
-    "Hold still... Capturing your identity."
-  ];
-
-  const startLivenessSequence = () => {
-    setLivenessPhase(1);
-    setTimeout(() => setLivenessPhase(2), 3000);
-    setTimeout(() => setLivenessPhase(3), 6000);
-    setTimeout(() => setLivenessPhase(4), 9000);
+  const startCaptureSequence = useCallback(() => {
+    setLivenessState('SCANNING');
+    
+    setTimeout(() => setLivenessState('COUNTDOWN_3'), 2500);
+    setTimeout(() => setLivenessState('COUNTDOWN_2'), 3500);
+    setTimeout(() => setLivenessState('COUNTDOWN_1'), 4500);
     setTimeout(() => {
       if (webcamRef.current) {
         const imageSrc = webcamRef.current.getScreenshot();
         setCapturedImage(imageSrc);
-        setLivenessPhase(5); 
+        setLivenessState('REVIEW');
       }
-    }, 11000);
-  };
+    }, 5500);
+  }, []);
 
   const retakePhoto = () => {
     setCapturedImage(null);
-    setLivenessPhase(0);
+    setLivenessState('READY');
   };
 
   const CheckIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
@@ -84,6 +81,7 @@ export default function CompliancePage() {
 
         .kyc-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px; box-shadow: var(--shadow-soft); }
         .section-title { font-size: 20px; font-weight: 700; color: var(--text-high); margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+        .section-subtitle { font-size: 14px; font-weight: 600; color: var(--brand-primary); margin: 32px 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .type-box { border: 2px solid var(--border-color); border-radius: 16px; padding: 32px 24px; text-align: center; cursor: pointer; transition: 0.2s; background: transparent; }
@@ -109,20 +107,31 @@ export default function CompliancePage() {
         .file-upload-text { font-size: 14px; font-weight: 600; color: var(--brand-primary); margin-bottom: 4px; }
         .file-upload-sub { font-size: 12px; color: var(--text-med); }
 
+        /* LIVENESS CAMERA ENHANCEMENTS */
         .liveness-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .camera-wrapper { position: relative; width: 320px; height: 420px; border-radius: 200px; overflow: hidden; margin: 0 auto 32px auto; box-shadow: 0 0 0 8px var(--bg-main), 0 0 0 10px var(--brand-primary); background: #000; }
+        .camera-wrapper { position: relative; width: 320px; height: 420px; border-radius: 16px; overflow: hidden; margin: 0 auto 32px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #000; border: 4px solid var(--border-color); transition: border-color 0.3s; }
+        .camera-wrapper.scanning { border-color: var(--brand-primary); }
         .camera-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } 
-        .camera-overlay { position: absolute; inset: 0; box-shadow: inset 0 0 0 2000px rgba(0,0,0,0.4); border-radius: 200px; z-index: 10; pointer-events: none; }
-        .camera-mask { position: absolute; inset: 20px; border-radius: 200px; border: 2px dashed rgba(255,255,255,0.8); z-index: 11; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); }
-        .camera-instruction { font-size: 20px; font-weight: 700; color: var(--text-high); text-align: center; margin-bottom: 24px; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-        .camera-instruction.active { color: var(--brand-primary); animation: pulseText 1s infinite alternate; }
         
-        @keyframes pulseText { from { opacity: 0.8; transform: scale(0.98); } to { opacity: 1; transform: scale(1.02); } }
+        .face-guide { position: absolute; inset: 40px 60px 80px 60px; border: 2px dashed rgba(255,255,255,0.6); border-radius: 50%; z-index: 11; pointer-events: none; transition: 0.3s; }
+        .scanning .face-guide { border-color: #10B981; border-style: solid; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+        
+        .scan-line { position: absolute; left: 0; right: 0; height: 4px; background: #10B981; z-index: 12; opacity: 0; box-shadow: 0 0 10px #10B981, 0 4px 10px #10B981; }
+        .scanning .scan-line { opacity: 1; animation: scanAnim 2s linear infinite; }
+        @keyframes scanAnim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
 
-        .btn-row { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-color); }
-        .btn-back { padding: 14px 24px; background: transparent; border: 1px solid var(--border-color); color: var(--text-high); border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .countdown-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20; display: flex; align-items: center; justify-content: center; color: white; font-size: 80px; font-weight: 900; }
+
+        .camera-instruction { font-size: 18px; font-weight: 700; color: var(--text-high); text-align: center; margin-bottom: 24px; min-height: 28px; }
+        
+        .review-box { background: rgba(16, 185, 129, 0.05); border: 1px dashed #10B981; padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 24px; width: 100%; max-width: 400px; }
+        .review-title { color: #10B981; font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+        .review-desc { color: var(--text-high); font-size: 14px; }
+
+        .btn-row { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-color); gap: 16px; }
+        .btn-back { padding: 14px 24px; background: transparent; border: 1px solid var(--border-color); color: var(--text-high); border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-back:hover { background: var(--bg-main); }
-        .btn-primary { padding: 14px 32px; background: var(--brand-primary); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .btn-primary { padding: 14px 32px; background: var(--brand-primary); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); white-space: nowrap; flex: 1; text-align: center; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
@@ -130,7 +139,7 @@ export default function CompliancePage() {
           .content-pad { padding: 20px 16px; }
           .type-grid, .form-grid { grid-template-columns: 1fr; }
           .kyc-card { padding: 24px 20px; }
-          .camera-wrapper { width: 260px; height: 340px; }
+          .camera-wrapper { width: 100%; max-width: 320px; height: 380px; }
         }
       `}} />
 
@@ -151,6 +160,7 @@ export default function CompliancePage() {
 
       <div className="kyc-card">
         
+        {/* STEP 1: BUSINESS TYPE */}
         {step === 1 && (
           <div>
             <h2 className="section-title">Select your business type</h2>
@@ -174,25 +184,52 @@ export default function CompliancePage() {
           </div>
         )}
 
+        {/* STEP 2: PROFILE (NAMES COLLECTED HERE) */}
         {step === 2 && (
           <div>
             <h2 className="section-title">Business & Identity Profile</h2>
-            <div className="form-grid">
-              {businessType === 'REGISTERED' && (
-                <>
+            
+            {businessType === 'REGISTERED' && (
+              <>
+                <div className="section-subtitle">Corporate Details</div>
+                <div className="form-grid" style={{ marginBottom: '24px' }}>
                   <div className="form-group full">
+                    <label className="form-label">Registered Corporate Name</label>
+                    <input type="text" className="form-input" placeholder="e.g. Quadrox Tech Limited" value={formData.corporateName} onChange={e => setFormData({...formData, corporateName: e.target.value})} />
+                  </div>
+                  <div className="form-group">
                     <label className="form-label">CAC Registration Number (RC)</label>
-                    <input type="text" className="form-input" placeholder="e.g. RC 1234567" />
+                    <input type="text" className="form-input" placeholder="e.g. RC 1234567" value={formData.rcNumber} onChange={e => setFormData({...formData, rcNumber: e.target.value})} />
                   </div>
-                  <div className="form-group full">
+                  <div className="form-group">
                     <label className="form-label">Tax Identification Number (TIN)</label>
-                    <input type="text" className="form-input" placeholder="Enter your corporate FIRS TIN" />
+                    <input type="text" className="form-input" placeholder="Enter corporate FIRS TIN" value={formData.tin} onChange={e => setFormData({...formData, tin: e.target.value})} />
                   </div>
-                </>
-              )}
+                </div>
+              </>
+            )}
 
+            <div className="section-subtitle">{businessType === 'REGISTERED' ? "Director's Personal Details" : "Your Personal Details"}</div>
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label">First Name (As it appears on ID)</label>
+                <input type="text" className="form-input" placeholder="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Last Name (As it appears on ID)</label>
+                <input type="text" className="form-input" placeholder="Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Date of Birth</label>
+                <input type="date" className="form-input" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <input type="tel" className="form-input" placeholder="+234 000 000 0000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+              </div>
+              
               <div className="form-group full">
-                <label className="form-label">Director's Bank Verification Number (BVN)</label>
+                <label className="form-label">Bank Verification Number (BVN)</label>
                 <input 
                   type="text" 
                   className="form-input" 
@@ -201,23 +238,18 @@ export default function CompliancePage() {
                   value={formData.bvn}
                   onChange={e => setFormData({...formData, bvn: e.target.value})}
                 />
-                
                 <div className="consent-box">
-                  <input 
-                    type="checkbox" 
-                    id="bvn-consent" 
-                    checked={formData.consent}
-                    onChange={e => setFormData({...formData, consent: e.target.checked})}
-                  />
-                  <label htmlFor="bvn-consent">
-                    <strong>Legal Consent:</strong> I authorize PAYPAXA to verify my identity using my Bank Verification Number (BVN) in accordance with CBN regulations.
-                  </label>
+                  <input type="checkbox" id="bvn-consent" checked={formData.consent} onChange={e => setFormData({...formData, consent: e.target.checked})} />
+                  <label htmlFor="bvn-consent"><strong>Legal Consent:</strong> I authorize PAYPAXA to verify my identity using my Bank Verification Number (BVN).</label>
                 </div>
               </div>
+            </div>
 
+            <div className="section-subtitle">Operational Details</div>
+            <div className="form-grid">
               <div className="form-group">
                 <label className="form-label">Industry / Category</label>
-                <select className="form-select">
+                <select className="form-select" value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})}>
                   <option value="">Select an industry...</option>
                   <option value="ecommerce">E-Commerce & Retail</option>
                   <option value="education">Education</option>
@@ -225,10 +257,9 @@ export default function CompliancePage() {
                   <option value="freelance">Freelance & Consulting</option>
                 </select>
               </div>
-
               <div className="form-group">
                 <label className="form-label">Expected Monthly Volume</label>
-                <select className="form-select">
+                <select className="form-select" value={formData.volume} onChange={e => setFormData({...formData, volume: e.target.value})}>
                   <option value="">Select expected volume...</option>
                   <option value="tier1">Under ₦1,000,000</option>
                   <option value="tier2">₦1,000,000 - ₦5,000,000</option>
@@ -239,22 +270,30 @@ export default function CompliancePage() {
 
             <div className="btn-row">
               <button className="btn-back" onClick={handleBack}>← Back</button>
-              <button className="btn-primary" disabled={!formData.bvn || !formData.consent} onClick={handleNext}>Proceed to Liveness →</button>
+              <button 
+                className="btn-primary" 
+                disabled={!formData.firstName || !formData.lastName || !formData.bvn || !formData.consent} 
+                onClick={handleNext}
+              >
+                Proceed to Identity Scan →
+              </button>
             </div>
           </div>
         )}
 
+        {/* STEP 3: LIVENESS SCAN WITH REVIEW */}
         {step === 3 && (
           <div>
-            <h2 className="section-title">Identity Verification</h2>
+            <h2 className="section-title">Identity Scan</h2>
             
             <div className="liveness-container">
-              <div className={`camera-instruction ${livenessPhase > 0 && livenessPhase < 5 ? 'active' : ''}`}>
-                {livenessPhase === 0 ? "Ready for Liveness Check" : livenessInstructions[livenessPhase - 1]}
-              </div>
+              {livenessState === 'READY' && <div className="camera-instruction">Position your face inside the frame. Ensure you are in a well-lit area.</div>}
+              {livenessState === 'SCANNING' && <div className="camera-instruction" style={{ color: 'var(--brand-primary)' }}>Analyzing face depth... Please hold still.</div>}
+              {livenessState.startsWith('COUNTDOWN') && <div className="camera-instruction" style={{ color: '#10B981' }}>Capturing image... Keep looking at the camera.</div>}
+              {livenessState === 'REVIEW' && <div className="camera-instruction">Photo Captured Successfully</div>}
 
-              <div className="camera-wrapper">
-                {capturedImage ? (
+              <div className={`camera-wrapper ${livenessState === 'SCANNING' || livenessState.startsWith('COUNTDOWN') ? 'scanning' : ''}`}>
+                {livenessState === 'REVIEW' && capturedImage ? (
                   <div style={{ width: '100%', height: '100%', backgroundImage: `url(${capturedImage})`, backgroundSize: 'cover', backgroundPosition: 'center', transform: 'scaleX(-1)' }} />
                 ) : (
                   <>
@@ -263,28 +302,39 @@ export default function CompliancePage() {
                       ref={webcamRef}
                       screenshotFormat="image/jpeg"
                       className="camera-video"
-                      videoConstraints={{ facingMode: "user" }}
+                      videoConstraints={{ facingMode: "user", width: 720, height: 720 }}
                     />
-                    <div className="camera-mask"></div>
+                    <div className="face-guide"></div>
+                    <div className="scan-line"></div>
+                    
+                    {livenessState === 'COUNTDOWN_3' && <div className="countdown-overlay">3</div>}
+                    {livenessState === 'COUNTDOWN_2' && <div className="countdown-overlay">2</div>}
+                    {livenessState === 'COUNTDOWN_1' && <div className="countdown-overlay">1</div>}
                   </>
                 )}
               </div>
 
-              {livenessPhase === 0 && (
-                <button className="btn-primary" onClick={startLivenessSequence} style={{ width: '320px', padding: '16px', fontSize: '16px' }}>
-                  Start Camera Capture
+              {livenessState === 'READY' && (
+                <button className="btn-primary" onClick={startCaptureSequence} style={{ width: '100%', maxWidth: '320px' }}>
+                  I'm Ready - Start Scan
                 </button>
               )}
               
-              {livenessPhase === 5 && (
-                <div style={{ display: 'flex', gap: '16px', width: '320px' }}>
-                  <button className="btn-back" onClick={retakePhoto} style={{ flex: 1 }}>Retake</button>
-                  <button className="btn-primary" onClick={handleNext} style={{ flex: 1 }}>Submit & Continue</button>
-                </div>
+              {livenessState === 'REVIEW' && (
+                <>
+                  <div className="review-box">
+                    <div className="review-title">Review Your Photo</div>
+                    <div className="review-desc">Is your face clearly visible and well-lit? Blurry or dark photos will be rejected during manual review.</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '400px' }}>
+                    <button className="btn-back" onClick={retakePhoto} style={{ flex: 1 }}>No, Retake Photo</button>
+                    <button className="btn-primary" onClick={handleNext} style={{ flex: 1, background: '#10B981', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>Yes, Looks Good →</button>
+                  </div>
+                </>
               )}
             </div>
             
-            {livenessPhase === 0 && (
+            {livenessState === 'READY' && (
               <div className="btn-row">
                 <button className="btn-back" onClick={handleBack}>← Back</button>
               </div>
@@ -292,26 +342,43 @@ export default function CompliancePage() {
           </div>
         )}
 
+        {/* STEP 4: DOCUMENT UPLOADS */}
         {step === 4 && (
           <div>
             <h2 className="section-title">Document Uploads</h2>
             <div className="form-grid" style={{ gap: '32px' }}>
               
               <div className="form-group full">
-                <label className="form-label">Valid Government ID (Director)</label>
+                <label className="form-label">Valid Government ID ({businessType === 'REGISTERED' ? "Director" : "Personal"})</label>
                 <div className="file-upload-zone">
                   <div className="file-upload-text">Click to upload Passport, Driver's License, or NIN</div>
                   <div className="file-upload-sub">PDF, JPG, or PNG (Max 5MB)</div>
                 </div>
               </div>
 
-              {businessType === 'REGISTERED' && (
-                <div className="form-group full">
-                  <label className="form-label">CAC Registration Certificate</label>
-                  <div className="file-upload-zone">
-                    <div className="file-upload-text">Click to upload CAC Certificate</div>
-                  </div>
+              <div className="form-group full">
+                <label className="form-label">Proof of Address (Utility Bill)</label>
+                <div className="file-upload-zone">
+                  <div className="file-upload-text">Click to upload NEPA/Utility Bill</div>
+                  <div className="file-upload-sub">Must be issued within the last 3 months</div>
                 </div>
+              </div>
+
+              {businessType === 'REGISTERED' && (
+                <>
+                  <div className="form-group full">
+                    <label className="form-label">CAC Registration Certificate</label>
+                    <div className="file-upload-zone">
+                      <div className="file-upload-text">Click to upload CAC Certificate</div>
+                    </div>
+                  </div>
+                  <div className="form-group full">
+                    <label className="form-label">Status Report / Form CAC 1.1</label>
+                    <div className="file-upload-zone">
+                      <div className="file-upload-text">Click to upload Status Report</div>
+                    </div>
+                  </div>
+                </>
               )}
 
             </div>
@@ -322,24 +389,31 @@ export default function CompliancePage() {
           </div>
         )}
 
+        {/* STEP 5: SETTLEMENT ACCOUNT */}
         {step === 5 && (
           <div>
             <h2 className="section-title">Settlement Bank Account</h2>
+            <p style={{ color: 'var(--text-med)', marginBottom: '24px', fontSize: '14px' }}>
+              Where should we send your money? For registered businesses, this must be a corporate account matching your CAC name.
+            </p>
+
             <div className="form-group">
               <label className="form-label">Select Bank</label>
               <select className="form-select">
                 <option value="">Choose a bank...</option>
                 <option value="gtb">Guaranty Trust Bank (GTB)</option>
                 <option value="zenith">Zenith Bank</option>
+                <option value="moniepoint">Moniepoint MFB</option>
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">Account Number</label>
               <input type="text" className="form-input" placeholder="Enter 10-digit account number" maxLength={10} />
             </div>
+            
             <div className="btn-row">
               <button className="btn-back" onClick={handleBack}>← Back</button>
-              <Link href="/dashboard" className="btn-primary" style={{ textDecoration: 'none' }}>
+              <Link href="/dashboard" className="btn-primary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 Submit for Compliance Review
               </Link>
             </div>
