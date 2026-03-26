@@ -4,9 +4,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import Link from 'next/link';
 
-// We dynamically import TensorFlow to avoid SSR issues in Next.js
-import * as tf from '@tensorflow/tfjs';
-import * as blazeface from '@tensorflow-models/blazeface';
+// We import ONLY the TypeScript types here. 
+// The actual heavy AI code is dynamically imported later to prevent server crashes.
+import type * as blazefaceType from '@tensorflow-models/blazeface';
 
 export default function CompliancePage() {
   const [step, setStep] = useState(1);
@@ -16,7 +16,7 @@ export default function CompliancePage() {
   // TFJS Liveness State
   const webcamRef = useRef<Webcam>(null);
   const requestRef = useRef<number>();
-  const modelRef = useRef<blazeface.BlazeFaceModel | null>(null);
+  const modelRef = useRef<blazefaceType.BlazeFaceModel | null>(null);
   
   const [modelLoading, setModelLoading] = useState(false);
   const [faceStatus, setFaceStatus] = useState<'START' | 'NO_FACE' | 'MOVE_CLOSER' | 'CENTER_FACE' | 'HOLD_STILL' | 'CAPTURED'>('START');
@@ -28,24 +28,31 @@ export default function CompliancePage() {
     industry: '', volume: '', corporateName: '', rcNumber: '', tin: '', bankCode: '', accountNumber: ''
   });
 
+  // Protects against SSR errors by ensuring rendering only happens on the client browser
   useEffect(() => {
     setIsClient(true);
-    // Preload tfjs backend silently
-    tf.ready().then(() => console.log("TFJS Ready"));
-    
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, []);
 
-  // Initialize the BlazeFace model when they reach the camera step
+  // Initialize the BlazeFace AI model DYNAMICALLY to prevent 503 Server Crashes
   useEffect(() => {
     if (step === 3 && !modelRef.current) {
       const loadModel = async () => {
         setModelLoading(true);
-        await tf.ready();
-        modelRef.current = await blazeface.load();
-        setModelLoading(false);
+        try {
+          // Dynamic imports: These only run in the user's browser, keeping your server 100% safe
+          const tf = await import('@tensorflow/tfjs');
+          const blazeface = await import('@tensorflow-models/blazeface');
+          
+          await tf.ready();
+          modelRef.current = await blazeface.load();
+        } catch (error) {
+          console.error("Failed to load AI model", error);
+        } finally {
+          setModelLoading(false);
+        }
       };
       loadModel();
     }
@@ -90,9 +97,8 @@ export default function CompliancePage() {
         } else {
           setFaceStatus('HOLD_STILL');
           setHoldProgress((prev) => {
-            const next = prev + 5; // Increases every frame (~60fps). Takes ~1 second to hit 100.
+            const next = prev + 4; // Increases every frame. Takes ~1.5 seconds to hit 100.
             if (next >= 100) {
-              // Capture the photo!
               const imageSrc = webcamRef.current?.getScreenshot();
               if (imageSrc) {
                 setCapturedImage(imageSrc);
@@ -106,14 +112,13 @@ export default function CompliancePage() {
       }
     }
     
-    // We safely loop because of the early return at the top if faceStatus === 'CAPTURED'
+    // Request next frame safely
     requestRef.current = requestAnimationFrame(detectFace);
-    
   }, [faceStatus]);
 
-  // Start scanning loop when user clicks "Start Scan"
+  // Manage scanning loop lifecycle
   useEffect(() => {
-    if (faceStatus === 'NO_FACE' || faceStatus === 'MOVE_CLOSER' || faceStatus === 'CENTER_FACE' || faceStatus === 'HOLD_STILL') {
+    if (['NO_FACE', 'MOVE_CLOSER', 'CENTER_FACE', 'HOLD_STILL'].includes(faceStatus)) {
       requestRef.current = requestAnimationFrame(detectFace);
     }
     return () => {
@@ -128,15 +133,15 @@ export default function CompliancePage() {
     setFaceStatus('START');
   };
 
-  const handleNext = () => { window.scrollTo(0,0); setStep(prev => prev + 1); };
-  const handleBack = () => { window.scrollTo(0,0); setStep(prev => prev - 1); };
+  const handleNext = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(prev => prev + 1); };
+  const handleBack = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(prev => prev - 1); };
 
   const steps = [
-    { id: 1, title: 'Business Type', desc: 'Select your entity structure' },
-    { id: 2, title: 'Identity Profile', desc: 'Personal & Corporate details' },
-    { id: 3, title: 'Liveness Scan', desc: 'Real-time facial verification' },
-    { id: 4, title: 'Documents', desc: 'Upload required paperwork' },
-    { id: 5, title: 'Settlement', desc: 'Link your payout account' }
+    { id: 1, title: 'Business Type', desc: 'Select entity structure' },
+    { id: 2, title: 'Identity Profile', desc: 'Personal details' },
+    { id: 3, title: 'Liveness Scan', desc: 'Facial verification' },
+    { id: 4, title: 'Documents', desc: 'Upload paperwork' },
+    { id: 5, title: 'Settlement', desc: 'Payout account' }
   ];
 
   if (!isClient) return null;
@@ -144,11 +149,11 @@ export default function CompliancePage() {
   return (
     <div className="compliance-layout">
       <style dangerouslySetInnerHTML={{__html: `
-        .compliance-layout { display: flex; min-height: 100vh; background: #F9FAFB; }
+        .compliance-layout { display: flex; min-height: 100vh; background: #F9FAFB; font-family: 'Inter', system-ui, sans-serif; }
         
-        /* SIDEBAR / LEFT PANE */
-        .sidebar { width: 340px; background: #FFFFFF; border-right: 1px solid #E5E7EB; padding: 40px; display: flex; flex-direction: column; position: fixed; height: 100vh; overflow-y: auto; }
-        .brand-logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 48px; letter-spacing: -0.5px; }
+        /* SIDEBAR (DESKTOP ONLY) */
+        .sidebar { width: 340px; background: #FFFFFF; border-right: 1px solid #E5E7EB; padding: 40px; display: flex; flex-direction: column; position: fixed; height: 100vh; overflow-y: auto; z-index: 10; }
+        .brand-logo { font-size: 24px; font-weight: 900; color: #111827; margin-bottom: 48px; letter-spacing: -0.5px; }
         
         .step-item { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 32px; position: relative; }
         .step-item:not(:last-child)::after { content: ''; position: absolute; left: 14px; top: 32px; bottom: -24px; width: 2px; background: #F3F4F6; }
@@ -163,42 +168,54 @@ export default function CompliancePage() {
         .step-text p { margin: 0; font-size: 13px; color: #6B7280; }
         .step-item:not(.active):not(.completed) .step-text h4 { color: #9CA3AF; }
 
+        /* MOBILE HEADER (APP-LIKE) */
+        .mobile-header { display: none; background: #FFFFFF; padding: 20px; border-bottom: 1px solid #E5E7EB; position: sticky; top: 0; z-index: 20; }
+        .mobile-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .mobile-brand { font-size: 18px; font-weight: 800; color: #111827; }
+        .mobile-step-count { font-size: 13px; font-weight: 600; color: #3B82F6; background: #EFF6FF; padding: 4px 10px; border-radius: 12px; }
+        .mobile-progress-bar { height: 4px; background: #F3F4F6; border-radius: 4px; overflow: hidden; }
+        .mobile-progress-fill { height: 100%; background: #3B82F6; transition: width 0.3s ease; }
+
         /* MAIN CONTENT PANE */
         .main-content { flex: 1; margin-left: 340px; padding: 60px 40px; display: flex; justify-content: center; }
-        .form-container { width: 100%; max-width: 640px; }
+        .form-container { width: 100%; max-width: 600px; }
         
-        .page-title { font-size: 28px; font-weight: 700; color: #111827; margin: 0 0 8px 0; letter-spacing: -0.5px; }
+        .page-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0 0 8px 0; letter-spacing: -0.5px; }
         .page-sub { font-size: 15px; color: #6B7280; margin: 0 0 40px 0; line-height: 1.5; }
+        .section-divider { font-size: 14px; font-weight: 700; color: #111827; margin: 32px 0 16px 0; border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* MODERN INPUTS */
+        /* FORM INPUTS */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { margin-bottom: 24px; }
+        .form-group { margin-bottom: 20px; }
         .form-group.full { grid-column: 1 / -1; }
         .form-label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
-        .form-input, .form-select { width: 100%; padding: 14px 16px; background-color: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 12px; color: #111827; font-size: 15px; outline: none; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .form-input, .form-select { width: 100%; padding: 14px 16px; background-color: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 12px; color: #111827; font-size: 15px; outline: none; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); -webkit-appearance: none; }
         .form-input:focus, .form-select:focus { border-color: #3B82F6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
         .form-input::placeholder { color: #9CA3AF; }
 
-        /* BUSINESS TYPE CARDS */
+        /* CARDS & ZONES */
         .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .type-card { background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; padding: 32px 24px; cursor: pointer; transition: 0.2s; text-align: left; }
+        .type-card { background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; padding: 24px; cursor: pointer; transition: 0.2s; text-align: left; }
         .type-card:hover { border-color: #D1D5DB; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .type-card.selected { border-color: #3B82F6; background: #EFF6FF; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
-        .type-card h3 { margin: 0 0 8px 0; font-size: 16px; color: #111827; }
+        .type-card h3 { margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #111827; }
         .type-card p { margin: 0; font-size: 13px; color: #6B7280; line-height: 1.5; }
 
-        /* UPLOAD ZONE */
-        .upload-zone { border: 2px dashed #D1D5DB; border-radius: 16px; padding: 40px 24px; text-align: center; background: #FFFFFF; cursor: pointer; transition: 0.2s; }
+        .upload-zone { border: 2px dashed #D1D5DB; border-radius: 16px; padding: 32px 20px; text-align: center; background: #FFFFFF; cursor: pointer; transition: 0.2s; }
         .upload-zone:hover { border-color: #3B82F6; background: #EFF6FF; }
         .upload-title { color: #3B82F6; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
         .upload-sub { color: #6B7280; font-size: 13px; }
+        
+        .consent-box { display: flex; align-items: flex-start; gap: 12px; background: rgba(59, 130, 246, 0.05); padding: 16px; border-radius: 12px; border: 1px dashed #3B82F6; margin-top: 8px; }
+        .consent-box input { margin-top: 4px; width: 18px; height: 18px; cursor: pointer; accent-color: #3B82F6; }
+        .consent-box label { font-size: 13px; color: #111827; line-height: 1.5; cursor: pointer; }
 
         /* CAMERA UI */
-        .camera-section { display: flex; flex-direction: column; align-items: center; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 24px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .video-mask { width: 340px; height: 340px; border-radius: 50%; overflow: hidden; position: relative; margin: 0 auto 32px auto; background: #111827; box-shadow: 0 0 0 8px #F3F4F6, 0 10px 25px rgba(0,0,0,0.1); transform: translateZ(0); }
+        .camera-section { display: flex; flex-direction: column; align-items: center; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 24px; padding: 40px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .video-mask { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; position: relative; margin: 0 auto 32px auto; background: #111827; box-shadow: 0 0 0 8px #F3F4F6, 0 10px 25px rgba(0,0,0,0.1); transform: translateZ(0); }
         .video-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         
-        .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 15px; margin-bottom: 24px; transition: 0.3s; }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 14px; margin-bottom: 24px; transition: 0.3s; text-align: center; }
         .status-ready { background: #F3F4F6; color: #4B5563; }
         .status-error { background: #FEF2F2; color: #EF4444; }
         .status-good { background: #ECFDF5; color: #10B981; }
@@ -207,23 +224,39 @@ export default function CompliancePage() {
         .progress-ring { position: absolute; inset: 0; border-radius: 50%; border: 8px solid transparent; border-top-color: #10B981; border-right-color: #10B981; transition: transform 0.1s linear; z-index: 10; pointer-events: none; }
 
         /* BUTTONS */
-        .btn-row { display: flex; justify-content: space-between; margin-top: 48px; border-top: 1px solid #E5E7EB; padding-top: 32px; gap: 16px; }
-        .btn { padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+        .btn-row { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 24px; border-top: 1px solid #E5E7EB; gap: 16px; }
+        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
         .btn-outline { background: transparent; border: 1px solid #D1D5DB; color: #374151; }
         .btn-outline:hover { background: #F9FAFB; }
         .btn-solid { background: #111827; color: #FFFFFF; border: none; flex: 1; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-solid:hover { background: #374151; transform: translateY(-1px); }
-        .btn-solid:disabled { background: #D1D5DB; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-solid:hover { background: #374151; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn-solid:disabled { background: #D1D5DB; color: #9CA3AF; cursor: not-allowed; transform: none; box-shadow: none; }
 
         @media (max-width: 1024px) {
           .compliance-layout { flex-direction: column; }
-          .sidebar { position: relative; width: 100%; height: auto; padding: 24px; border-right: none; border-bottom: 1px solid #E5E7EB; display: none; }
+          .sidebar { display: none; }
+          .mobile-header { display: block; }
           .main-content { margin-left: 0; padding: 32px 20px; }
+        }
+        @media (max-width: 600px) {
           .type-grid, .form-grid { grid-template-columns: 1fr; }
+          .btn-row { flex-direction: column-reverse; }
+          .btn { width: 100%; }
         }
       `}} />
 
-      {/* LEFT SIDEBAR */}
+      {/* MOBILE HEADER (Only visible on small screens) */}
+      <div className="mobile-header">
+        <div className="mobile-header-top">
+          <div className="mobile-brand">PAYPAXA</div>
+          <div className="mobile-step-count">Step {step} of 5</div>
+        </div>
+        <div className="mobile-progress-bar">
+          <div className="mobile-progress-fill" style={{ width: `${(step / 5) * 100}%` }}></div>
+        </div>
+      </div>
+
+      {/* DESKTOP SIDEBAR */}
       <div className="sidebar">
         <div className="brand-logo">PAYPAXA</div>
         <div className="steps-container">
@@ -241,7 +274,7 @@ export default function CompliancePage() {
         </div>
       </div>
 
-      {/* RIGHT CONTENT PANE */}
+      {/* MAIN CONTENT */}
       <div className="main-content">
         <div className="form-container">
           
@@ -276,8 +309,8 @@ export default function CompliancePage() {
               </div>
 
               <div className="btn-row">
-                <div></div>
-                <button className="btn btn-solid" style={{ maxWidth: '200px' }} disabled={!businessType} onClick={handleNext}>Continue →</button>
+                <div className="btn-spacer" style={{ flex: 1 }}></div>
+                <button className="btn btn-solid" style={{ flex: 'none', minWidth: '200px' }} disabled={!businessType} onClick={handleNext}>Continue →</button>
               </div>
             </div>
           )}
@@ -290,7 +323,7 @@ export default function CompliancePage() {
 
               {businessType === 'REGISTERED' && (
                 <>
-                  <h3 style={{ fontSize: '15px', color: '#111827', margin: '32px 0 16px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>Corporate Details</h3>
+                  <div className="section-divider">Corporate Details</div>
                   <div className="form-grid">
                     <div className="form-group full">
                       <label className="form-label">Registered Company Name</label>
@@ -308,18 +341,16 @@ export default function CompliancePage() {
                 </>
               )}
 
-              <h3 style={{ fontSize: '15px', color: '#111827', margin: '32px 0 16px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>
-                {businessType === 'REGISTERED' ? "Director's Personal Details" : "Your Legal Details"}
-              </h3>
+              <div className="section-divider">{businessType === 'REGISTERED' ? "Director's Personal Details" : "Your Legal Details"}</div>
               
               <div className="form-grid">
                 <div className="form-group">
                   <label className="form-label">First Name (Legal)</label>
-                  <input type="text" className="form-input" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                  <input type="text" className="form-input" placeholder="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Last Name (Legal)</label>
-                  <input type="text" className="form-input" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                  <input type="text" className="form-input" placeholder="Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Date of Birth</label>
@@ -336,21 +367,26 @@ export default function CompliancePage() {
                 </div>
               </div>
 
+              <div className="consent-box">
+                <input type="checkbox" id="consent-check" checked={formData.consent} onChange={e => setFormData({...formData, consent: e.target.checked})} />
+                <label htmlFor="consent-check"><strong>Legal Consent:</strong> I authorize PAYPAXA to verify my identity using my Bank Verification Number (BVN) in accordance with CBN regulations.</label>
+              </div>
+
               <div className="btn-row">
                 <button className="btn btn-outline" onClick={handleBack}>Back</button>
-                <button className="btn btn-solid" disabled={!formData.firstName || !formData.lastName || !formData.bvn || formData.bvn.length !== 11} onClick={handleNext}>Continue to Camera →</button>
+                <button className="btn btn-solid" disabled={!formData.firstName || !formData.lastName || !formData.bvn || formData.bvn.length !== 11 || !formData.consent} onClick={handleNext}>Continue to Camera →</button>
               </div>
             </div>
           )}
 
-          {/* STEP 3: TENSORFLOW LIVENESS SCAN */}
+          {/* STEP 3: AI LIVENESS SCAN */}
           {step === 3 && (
             <div>
               <h1 className="page-title">Liveness Verification</h1>
               <p className="page-sub">We need to ensure you are a real person matching the submitted identity. Please remove glasses and hats.</p>
 
               <div className="camera-section">
-                {modelLoading && <div className="status-badge status-ready"><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Loading AI Model...</div>}
+                {modelLoading && <div className="status-badge status-ready"><svg className="animate-spin" style={{ display: 'inline', marginRight: '8px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Loading AI Model...</div>}
                 
                 {!modelLoading && faceStatus === 'START' && <div className="status-badge status-ready">Camera Ready</div>}
                 {!modelLoading && faceStatus === 'NO_FACE' && <div className="status-badge status-error">No face detected</div>}
@@ -371,15 +407,15 @@ export default function CompliancePage() {
                 </div>
 
                 {faceStatus === 'START' && !modelLoading && (
-                  <button className="btn btn-solid" onClick={startScan}>Start Face Scan</button>
+                  <button className="btn btn-solid" style={{ width: '100%', maxWidth: '280px' }} onClick={startScan}>Start Face Scan</button>
                 )}
 
                 {faceStatus === 'CAPTURED' && (
                   <div style={{ textAlign: 'center', width: '100%' }}>
-                    <p style={{ color: '#111827', fontWeight: 600, marginBottom: '16px' }}>Is your face clear and well-lit?</p>
+                    <p style={{ color: '#111827', fontWeight: 600, marginBottom: '16px', fontSize: '15px' }}>Is your face clear and well-lit?</p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-                      <button className="btn btn-outline" onClick={retakePhoto}>Retake</button>
-                      <button className="btn btn-solid" onClick={handleNext}>Yes, Looks Good</button>
+                      <button className="btn btn-outline" style={{ flex: 1 }} onClick={retakePhoto}>Retake</button>
+                      <button className="btn btn-solid" style={{ flex: 1, background: '#10B981' }} onClick={handleNext}>Yes, Looks Good</button>
                     </div>
                   </div>
                 )}
@@ -397,7 +433,7 @@ export default function CompliancePage() {
           {step === 4 && (
             <div>
               <h1 className="page-title">Document Uploads</h1>
-              <p className="page-sub">Upload crisp, clear copies of your official documents. Blurry uploads will be rejected.</p>
+              <p className="page-sub">Upload crisp, clear copies of your official documents. Blurry uploads will be rejected during manual review.</p>
               
               <div className="form-group full">
                 <label className="form-label">Government Issued ID ({formData.firstName} {formData.lastName})</label>
@@ -408,7 +444,7 @@ export default function CompliancePage() {
               </div>
 
               {businessType === 'REGISTERED' && (
-                <div className="form-group full">
+                <div className="form-group full" style={{ marginTop: '24px' }}>
                   <label className="form-label">CAC Registration Certificate</label>
                   <div className="upload-zone">
                     <div className="upload-title">Click or drag CAC Certificate</div>
@@ -437,6 +473,7 @@ export default function CompliancePage() {
                   <option value="gtb">Guaranty Trust Bank</option>
                   <option value="zenith">Zenith Bank</option>
                   <option value="moniepoint">Moniepoint MFB</option>
+                  <option value="opay">OPay Digital Services</option>
                 </select>
               </div>
               <div className="form-group">
