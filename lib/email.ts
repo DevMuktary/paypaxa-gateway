@@ -59,7 +59,8 @@ export async function sendVerificationEmail(recipientEmail: string, verification
 }
 
 // 2. Login Two-Factor (2FA) OTP Email
-export async function sendTwoFactorEmail(recipientEmail: string, otpCode: string) {
+// Updated to accept the firstName argument and use it in the email!
+export async function sendTwoFactorEmail(recipientEmail: string, firstName: string, otpCode: string) {
   try {
     const htmlContent = `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #FAFAFA;">
@@ -69,7 +70,7 @@ export async function sendTwoFactorEmail(recipientEmail: string, otpCode: string
           </div>
           
           <p style="font-size: 16px; color: #4B5563; line-height: 1.6; margin-bottom: 24px;">
-            Hello, <br/><br/>
+            Hello ${firstName}, <br/><br/>
             A login attempt was made to your PAYPAXA account. Please use the OTP below to complete your login securely:
           </p>
           
@@ -95,7 +96,8 @@ export async function sendTwoFactorEmail(recipientEmail: string, otpCode: string
     await client.sendMail({
       bounce_address: BOUNCE_EMAIL,
       from: { address: SENDER_EMAIL, name: SENDER_NAME },
-      to: [{ email_address: { address: recipientEmail, name: "Merchant" } }],
+      // ZeptoMail SDK gets the actual user's first name here too
+      to: [{ email_address: { address: recipientEmail, name: firstName } }],
       subject: "Your PAYPAXA Login OTP",
       htmlbody: htmlContent,
     });
