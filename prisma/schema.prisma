@@ -15,7 +15,7 @@ enum Environment {
 }
 
 enum KycTier {
-  UNVERIFIED  // Cannot process payments yet
+  UNVERIFIED  // Cannot process real payments yet
   STARTER     // Basic KYC (NIN/BVN) - Processing limits apply
   REGISTERED  // Full Corporate KYC (CAC) - Unlimited processing
 }
@@ -37,7 +37,7 @@ model User {
   lastName        String?
   passwordHash    String
   
-  // Security & Auth
+  // Security & Auth (Unified for Email Verification and 2FA)
   isEmailVerified Boolean    @default(false)
   twoFactorOtp    String?
   twoFactorExpiry DateTime?
@@ -45,7 +45,7 @@ model User {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  // A single user can own multiple businesses
+  // A single user can own multiple businesses (Enforced to max 3 via API)
   businesses      Business[] 
 }
 
@@ -54,7 +54,7 @@ model Business {
   id              String     @id @default(uuid())
   userId          String
   name            String
-  email           String     @unique // Business support email
+  email           String     // Business support email
   
   // Gateway State
   kycTier         KycTier    @default(UNVERIFIED)
@@ -68,6 +68,9 @@ model Business {
   apiKeys         ApiKey[]
   transactions    Transaction[]
   customers       Customer[]
+
+  // Prevents a user from creating two businesses with the exact same name
+  @@unique([userId, name])
 }
 
 // 3. Developer API Keys (Separated by Sandbox/Live)
@@ -77,10 +80,11 @@ model ApiKey {
   environment     Environment @default(SANDBOX)
   
   publicKey       String      @unique // e.g., pk_test_12345
-  secretKeyHash   String      // We only store the hash of the secret key for security
+  secretKey       String      @unique // Stored raw during MVP so we can reveal it in the UI
+  webhookUrl      String?     // The merchant's endpoint for payment callbacks
   
   createdAt       DateTime    @default(now())
-  lastUsedAt      DateTime?
+  updatedAt       DateTime    @updatedAt // Tracks when the key or webhook was last modified
 
   business        Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
@@ -110,10 +114,10 @@ model Transaction {
   customerId      String?
   
   environment     Environment       @default(SANDBOX)
-  amount          Decimal           @db.Decimal(12, 2) // Precise financial decimal
+  amount          Decimal           @db.Decimal(12, 2) // Precise financial decimal to prevent rounding errors
   currency        String            @default("NGN")
   reference       String            @unique // The merchant's custom reference
-  gatewayRef      String            @unique // PAYPAXA's internal reference
+  gatewayRef      String            @unique // PAYPAXA's internal tracking reference
   
   status          TransactionStatus @default(PENDING)
   paymentMethod   String?           // e.g., "CARD", "TRANSFER", "USSD"
