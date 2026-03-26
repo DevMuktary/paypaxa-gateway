@@ -106,9 +106,9 @@ export default function CompliancePage() {
       }
     }
     
-    if (faceStatus !== 'CAPTURED') {
-      requestRef.current = requestAnimationFrame(detectFace);
-    }
+    // We safely loop because of the early return at the top if faceStatus === 'CAPTURED'
+    requestRef.current = requestAnimationFrame(detectFace);
+    
   }, [faceStatus]);
 
   // Start scanning loop when user clicks "Start Scan"
@@ -136,7 +136,7 @@ export default function CompliancePage() {
     { id: 2, title: 'Identity Profile', desc: 'Personal & Corporate details' },
     { id: 3, title: 'Liveness Scan', desc: 'Real-time facial verification' },
     { id: 4, title: 'Documents', desc: 'Upload required paperwork' },
-    { id: 5, title: 'Settlement', bank: 'Link your payout account' }
+    { id: 5, title: 'Settlement', desc: 'Link your payout account' }
   ];
 
   if (!isClient) return null;
@@ -217,7 +217,7 @@ export default function CompliancePage() {
 
         @media (max-width: 1024px) {
           .compliance-layout { flex-direction: column; }
-          .sidebar { position: relative; width: 100%; height: auto; padding: 24px; border-right: none; border-bottom: 1px solid #E5E7EB; display: none; /* Hide sidebar on mobile for simplicity */ }
+          .sidebar { position: relative; width: 100%; height: auto; padding: 24px; border-right: none; border-bottom: 1px solid #E5E7EB; display: none; }
           .main-content { margin-left: 0; padding: 32px 20px; }
           .type-grid, .form-grid { grid-template-columns: 1fr; }
         }
