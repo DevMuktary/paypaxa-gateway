@@ -4,8 +4,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
-// 🚀 CRITICAL FIX: Cast the entire component to 'any' to bypass Next.js strict JSX prop checking completely
-const Webcam: any = dynamic(() => import('react-webcam'), { ssr: false });
+// 🚀 THE FIX: Cast the imported module as a generic React Component to bypass strict internal type clashes
+const Webcam = dynamic(
+  () => import('react-webcam').then((mod) => mod.default as React.ComponentType<any>),
+  { ssr: false }
+);
 
 import type * as blazefaceType from '@tensorflow-models/blazeface';
 
