@@ -15,11 +15,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    // Force lowercase to prevent case-sensitive login failures
-    const cleanEmail = email.toLowerCase().trim();
-
     // 1. Find the user
-    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
