@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import Link from 'next/link';
 
@@ -10,416 +10,357 @@ export default function CompliancePage() {
   const [isClient, setIsClient] = useState(false);
 
   const webcamRef = useRef<Webcam>(null);
-  const [livenessState, setLivenessState] = useState<'READY' | 'SCANNING' | 'COUNTDOWN_3' | 'COUNTDOWN_2' | 'COUNTDOWN_1' | 'REVIEW'>('READY');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   
+  // We will wire this up to a real ML model in the next step
+  const [isFaceDetected, setIsFaceDetected] = useState(false); 
+  
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    dob: '',
-    phone: '',
-    bvn: '',
-    consent: false,
-    industry: '',
-    volume: '',
-    supportEmail: '',
-    disputeEmail: '',
-    website: '',
-    corporateName: '',
-    rcNumber: '',
-    tin: '',
-    bankCode: '',
-    accountNumber: ''
+    firstName: '', lastName: '', dob: '', phone: '', bvn: '', consent: false,
+    industry: '', volume: '', supportEmail: '', disputeEmail: '', website: '',
+    corporateName: '', rcNumber: '', tin: '', bankCode: '', accountNumber: ''
   });
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  useEffect(() => { setIsClient(true); }, []);
 
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
 
-  const startCaptureSequence = useCallback(() => {
-    setLivenessState('SCANNING');
-    
-    setTimeout(() => setLivenessState('COUNTDOWN_3'), 2500);
-    setTimeout(() => setLivenessState('COUNTDOWN_2'), 3500);
-    setTimeout(() => setLivenessState('COUNTDOWN_1'), 4500);
-    setTimeout(() => {
-      if (webcamRef.current) {
-        const imageSrc = webcamRef.current.getScreenshot();
-        setCapturedImage(imageSrc);
-        setLivenessState('REVIEW');
-      }
-    }, 5500);
-  }, []);
-
-  const retakePhoto = () => {
-    setCapturedImage(null);
-    setLivenessState('READY');
+  // Temporary capture function until we install the ML Face Tracker
+  const capturePhoto = () => {
+    if (webcamRef.current) {
+      const imageSrc = webcamRef.current.getScreenshot();
+      setCapturedImage(imageSrc);
+    }
   };
 
-  const CheckIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
-  const BuildingIcon = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>;
-  const UserIcon = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+  const CheckIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+
+  const steps = [
+    { id: 1, title: "Business Type", desc: "Select your legal entity" },
+    { id: 2, title: "Profile Details", desc: "Personal and operational info" },
+    { id: 3, title: "Identity Scan", desc: "Biometric face verification" },
+    { id: 4, title: "Documentation", desc: "Upload required files" },
+    { id: 5, title: "Settlement", desc: "Where you receive payouts" }
+  ];
 
   if (!isClient) return null; 
 
   return (
-    <div className="kyc-container">
+    <div className="modern-layout">
       <style dangerouslySetInnerHTML={{__html: `
-        .kyc-container { padding: 40px; max-width: 900px; margin: 0 auto; min-height: 100vh; }
-        .page-title { font-size: 28px; font-weight: 800; margin: 0 0 8px 0; color: var(--text-high); letter-spacing: -0.5px; }
-        .page-sub { color: var(--text-med); font-size: 15px; margin: 0 0 40px 0; line-height: 1.5; }
-
-        .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; position: relative; }
-        .progress-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: var(--border-color); z-index: 1; transform: translateY(-50%); }
-        .progress-line-fill { position: absolute; top: 50%; left: 0; height: 2px; background: var(--brand-primary); z-index: 2; transform: translateY(-50%); transition: width 0.3s ease; }
-        .progress-step { position: relative; z-index: 3; background: var(--bg-main); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; border: 2px solid var(--border-color); color: var(--text-med); transition: 0.3s; }
-        .progress-step.active { border-color: var(--brand-primary); color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-        .progress-step.completed { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
-
-        .kyc-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px; box-shadow: var(--shadow-soft); }
-        .section-title { font-size: 20px; font-weight: 700; color: var(--text-high); margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
-        .section-subtitle { font-size: 14px; font-weight: 600; color: var(--brand-primary); margin: 32px 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .type-box { border: 2px solid var(--border-color); border-radius: 16px; padding: 32px 24px; text-align: center; cursor: pointer; transition: 0.2s; background: transparent; }
-        .type-box:hover { border-color: var(--text-med); background: var(--nav-hover); }
-        .type-box.selected { border-color: var(--brand-primary); background: var(--nav-active); }
-        .type-icon { color: var(--brand-primary); margin-bottom: 16px; display: flex; justify-content: center; }
-        .type-title { font-size: 18px; font-weight: 700; color: var(--text-high); margin-bottom: 8px; }
-        .type-desc { font-size: 13px; color: var(--text-med); line-height: 1.5; }
-
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group.full { grid-column: 1 / -1; }
-        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-high); margin-bottom: 8px; }
-        .form-input, .form-select { width: 100%; padding: 14px 16px; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-high); font-size: 15px; outline: none; transition: 0.2s; }
-        .form-input:focus, .form-select:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        :root {
+          --brand-black: #0A0A0A;
+          --brand-gray: #F4F4F5;
+          --brand-border: #E4E4E7;
+          --brand-primary: #000000;
+          --text-main: #171717;
+          --text-muted: #71717A;
+        }
         
-        .consent-box { display: flex; align-items: flex-start; gap: 12px; background: rgba(59, 130, 246, 0.05); padding: 16px; border-radius: 12px; border: 1px dashed var(--brand-primary); margin-top: 8px; }
-        .consent-box input { margin-top: 4px; width: 18px; height: 18px; cursor: pointer; }
-        .consent-box label { font-size: 13px; color: var(--text-high); line-height: 1.5; cursor: pointer; }
-
-        .file-upload-zone { border: 2px dashed var(--border-color); border-radius: 12px; padding: 32px; text-align: center; background: var(--bg-main); transition: 0.2s; cursor: pointer; }
-        .file-upload-zone:hover { border-color: var(--brand-primary); background: var(--nav-active); }
-        .file-upload-text { font-size: 14px; font-weight: 600; color: var(--brand-primary); margin-bottom: 4px; }
-        .file-upload-sub { font-size: 12px; color: var(--text-med); }
-
-        /* LIVENESS CAMERA ENHANCEMENTS */
-        .liveness-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .camera-wrapper { position: relative; width: 320px; height: 420px; border-radius: 16px; overflow: hidden; margin: 0 auto 32px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #000; border: 4px solid var(--border-color); transition: border-color 0.3s; }
-        .camera-wrapper.scanning { border-color: var(--brand-primary); }
-        .camera-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } 
+        html, body { margin: 0; padding: 0; background: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; }
         
-        .face-guide { position: absolute; inset: 40px 60px 80px 60px; border: 2px dashed rgba(255,255,255,0.6); border-radius: 50%; z-index: 11; pointer-events: none; transition: 0.3s; }
-        .scanning .face-guide { border-color: #10B981; border-style: solid; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+        .modern-layout { display: flex; height: 100vh; overflow: hidden; }
         
-        .scan-line { position: absolute; left: 0; right: 0; height: 4px; background: #10B981; z-index: 12; opacity: 0; box-shadow: 0 0 10px #10B981, 0 4px 10px #10B981; }
-        .scanning .scan-line { opacity: 1; animation: scanAnim 2s linear infinite; }
-        @keyframes scanAnim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
-
-        .countdown-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20; display: flex; align-items: center; justify-content: center; color: white; font-size: 80px; font-weight: 900; }
-
-        .camera-instruction { font-size: 18px; font-weight: 700; color: var(--text-high); text-align: center; margin-bottom: 24px; min-height: 28px; }
+        /* LEFT SIDEBAR - SLEEK & DARK */
+        .sidebar { width: 380px; background: var(--brand-black); color: white; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; }
+        .logo-area { font-size: 24px; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 12px; }
         
-        .review-box { background: rgba(16, 185, 129, 0.05); border: 1px dashed #10B981; padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 24px; width: 100%; max-width: 400px; }
-        .review-title { color: #10B981; font-weight: 700; font-size: 16px; margin-bottom: 8px; }
-        .review-desc { color: var(--text-high); font-size: 14px; }
+        .step-indicator { display: flex; flex-direction: column; gap: 32px; margin-top: 60px; }
+        .step-item { display: flex; gap: 16px; opacity: 0.4; transition: 0.3s; }
+        .step-item.active { opacity: 1; }
+        .step-item.completed { opacity: 0.7; }
+        
+        .step-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+        .step-item.active .step-circle { border-color: white; background: white; color: black; }
+        .step-item.completed .step-circle { border-color: #10B981; background: #10B981; color: white; }
+        
+        .step-text h4 { margin: 0 0 4px 0; font-size: 15px; font-weight: 600; }
+        .step-text p { margin: 0; font-size: 13px; color: #A1A1AA; }
 
-        .btn-row { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-color); gap: 16px; }
-        .btn-back { padding: 14px 24px; background: transparent; border: 1px solid var(--border-color); color: var(--text-high); border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .btn-back:hover { background: var(--bg-main); }
-        .btn-primary { padding: 14px 32px; background: var(--brand-primary); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); white-space: nowrap; flex: 1; text-align: center; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        /* RIGHT CONTENT AREA - CLEAN & MINIMAL */
+        .main-content { flex: 1; overflow-y: auto; padding: 60px 80px; background: #FFFFFF; display: flex; justify-content: center; }
+        .form-container { width: 100%; max-width: 560px; padding-bottom: 80px; }
+        
+        .step-header { margin-bottom: 40px; }
+        .step-header h2 { font-size: 32px; font-weight: 700; color: var(--text-main); margin: 0 0 12px 0; letter-spacing: -0.5px; }
+        .step-header p { font-size: 16px; color: var(--text-muted); margin: 0; line-height: 1.5; }
 
-        @media (max-width: 768px) {
-          .content-pad { padding: 20px 16px; }
-          .type-grid, .form-grid { grid-template-columns: 1fr; }
-          .kyc-card { padding: 24px 20px; }
-          .camera-wrapper { width: 100%; max-width: 320px; height: 380px; }
+        /* CLEAN INPUTS (STRIPE-LIKE) */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group.full { grid-column: 1 / -1; }
+        .input-label { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .modern-input { width: 100%; padding: 14px 16px; background: #FAFAFA; border: 1px solid var(--brand-border); border-radius: 12px; font-size: 15px; color: var(--text-main); outline: none; transition: 0.2s; box-sizing: border-box; }
+        .modern-input:focus { background: #FFFFFF; border-color: black; box-shadow: 0 0 0 4px rgba(0,0,0,0.05); }
+
+        /* SELECTION CARDS */
+        .selection-cards { display: flex; flex-direction: column; gap: 16px; }
+        .select-card { border: 2px solid var(--brand-border); border-radius: 16px; padding: 24px; cursor: pointer; transition: 0.2s; display: flex; gap: 20px; align-items: center; background: #FFFFFF; }
+        .select-card:hover { border-color: #D4D4D8; }
+        .select-card.active { border-color: black; background: #FAFAFA; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card-radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--brand-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .select-card.active .card-radio::after { content: ''; width: 12px; height: 12px; background: black; border-radius: 50%; }
+        .card-info h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: var(--text-main); }
+        .card-info p { margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+        /* CAMERA UI */
+        .camera-container { display: flex; flex-direction: column; align-items: center; }
+        .camera-frame { position: relative; width: 340px; height: 440px; border-radius: 200px; overflow: hidden; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.1); margin-bottom: 32px; border: 4px solid var(--brand-border); transition: border-color 0.3s; }
+        .camera-frame.detected { border-color: #10B981; }
+        .camera-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .camera-overlay { position: absolute; inset: 0; box-shadow: inset 0 0 0 2000px rgba(255,255,255,0.2); pointer-events: none; z-index: 10; }
+        
+        .status-pill { background: #FAFAFA; border: 1px solid var(--brand-border); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+        .status-pill.success { background: #ECFDF5; border-color: #10B981; color: #10B981; }
+
+        /* UPLOAD ZONE */
+        .upload-zone { border: 2px dashed var(--brand-border); border-radius: 16px; padding: 40px 24px; text-align: center; cursor: pointer; transition: 0.2s; background: #FAFAFA; }
+        .upload-zone:hover { border-color: black; background: #FFFFFF; }
+        .upload-zone h4 { margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: var(--text-main); }
+        .upload-zone p { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+        /* BOTTOM NAV */
+        .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--brand-border); }
+        .btn-ghost { background: transparent; border: none; font-size: 15px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.2s; padding: 12px 0; }
+        .btn-ghost:hover { color: var(--text-main); }
+        .btn-solid { background: black; color: white; border: none; padding: 14px 32px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-solid:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+        .btn-solid:disabled { background: #E4E4E7; color: #A1A1AA; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        @media (max-width: 1024px) {
+          .modern-layout { flex-direction: column; overflow: auto; }
+          .sidebar { width: 100%; padding: 24px; flex-direction: row; align-items: center; }
+          .step-indicator { display: none; } /* Hide steps on mobile for clean look */
+          .main-content { padding: 32px 20px; }
+          .input-grid { grid-template-columns: 1fr; }
         }
       `}} />
 
-      <div>
-        <h1 className="page-title">Compliance Setup</h1>
-        <p className="page-sub">Verify your identity to unlock live API keys and withdraw funds to your bank.</p>
-      </div>
-
-      <div className="progress-container">
-        <div className="progress-line"></div>
-        <div className="progress-line-fill" style={{ width: `${(step - 1) * 25}%` }}></div>
-        {[1, 2, 3, 4, 5].map(num => (
-          <div key={num} className={`progress-step ${step === num ? 'active' : ''} ${step > num ? 'completed' : ''}`}>
-            {step > num ? <CheckIcon /> : num}
-          </div>
-        ))}
-      </div>
-
-      <div className="kyc-card">
+      {/* LEFT SIDEBAR */}
+      <div className="sidebar">
+        <div className="logo-area">
+          <img src="https://paypaxa.com/logo.png" alt="" style={{ height: '32px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+          PAYPAXA
+        </div>
         
-        {/* STEP 1: BUSINESS TYPE */}
-        {step === 1 && (
-          <div>
-            <h2 className="section-title">Select your business type</h2>
-            <div className="type-grid">
-              <div className={`type-box ${businessType === 'STARTER' ? 'selected' : ''}`} onClick={() => setBusinessType('STARTER')}>
-                <div className="type-icon"><UserIcon /></div>
-                <div className="type-title">Starter Business</div>
-                <div className="type-desc">I am a freelancer, creator, or unregistered business. I don't have a CAC certificate yet.</div>
+        <div className="step-indicator">
+          {steps.map(s => (
+            <div key={s.id} className={`step-item ${step === s.id ? 'active' : ''} ${step > s.id ? 'completed' : ''}`}>
+              <div className="step-circle">
+                {step > s.id ? <CheckIcon /> : s.id}
+              </div>
+              <div className="step-text">
+                <h4>{s.title}</h4>
+                <p>{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize: '13px', color: '#71717A' }}>
+          Secure, Encrypted, & CBN Compliant.
+        </div>
+      </div>
+
+      {/* RIGHT MAIN CONTENT */}
+      <div className="main-content">
+        <div className="form-container">
+          
+          {/* STEP 1: BUSINESS TYPE */}
+          {step === 1 && (
+            <div className="animate-fade-in">
+              <div className="step-header">
+                <h2>How is your business structured?</h2>
+                <p>We need to know your legal entity type to verify you correctly.</p>
               </div>
               
-              <div className={`type-box ${businessType === 'REGISTERED' ? 'selected' : ''}`} onClick={() => setBusinessType('REGISTERED')}>
-                <div className="type-icon"><BuildingIcon /></div>
-                <div className="type-title">Registered Business</div>
-                <div className="type-desc">I have a registered Corporate Affairs Commission (CAC) certificate and TIN.</div>
-              </div>
-            </div>
-
-            <div className="btn-row" style={{ justifyContent: 'flex-end' }}>
-              <button className="btn-primary" disabled={!businessType} onClick={handleNext}>Continue to Profile →</button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: PROFILE (NAMES COLLECTED HERE) */}
-        {step === 2 && (
-          <div>
-            <h2 className="section-title">Business & Identity Profile</h2>
-            
-            {businessType === 'REGISTERED' && (
-              <>
-                <div className="section-subtitle">Corporate Details</div>
-                <div className="form-grid" style={{ marginBottom: '24px' }}>
-                  <div className="form-group full">
-                    <label className="form-label">Registered Corporate Name</label>
-                    <input type="text" className="form-input" placeholder="e.g. Quadrox Tech Limited" value={formData.corporateName} onChange={e => setFormData({...formData, corporateName: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">CAC Registration Number (RC)</label>
-                    <input type="text" className="form-input" placeholder="e.g. RC 1234567" value={formData.rcNumber} onChange={e => setFormData({...formData, rcNumber: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Tax Identification Number (TIN)</label>
-                    <input type="text" className="form-input" placeholder="Enter corporate FIRS TIN" value={formData.tin} onChange={e => setFormData({...formData, tin: e.target.value})} />
+              <div className="selection-cards">
+                <div className={`select-card ${businessType === 'STARTER' ? 'active' : ''}`} onClick={() => setBusinessType('STARTER')}>
+                  <div className="card-radio"></div>
+                  <div className="card-info">
+                    <h3>Starter Business (Unregistered)</h3>
+                    <p>I am a freelancer, individual creator, or an unregistered business. I do not have a CAC certificate.</p>
                   </div>
                 </div>
-              </>
-            )}
-
-            <div className="section-subtitle">{businessType === 'REGISTERED' ? "Director's Personal Details" : "Your Personal Details"}</div>
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">First Name (As it appears on ID)</label>
-                <input type="text" className="form-input" placeholder="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Last Name (As it appears on ID)</label>
-                <input type="text" className="form-input" placeholder="Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Date of Birth</label>
-                <input type="date" className="form-input" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Phone Number</label>
-                <input type="tel" className="form-input" placeholder="+234 000 000 0000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-              </div>
-              
-              <div className="form-group full">
-                <label className="form-label">Bank Verification Number (BVN)</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Enter 11-digit BVN" 
-                  maxLength={11}
-                  value={formData.bvn}
-                  onChange={e => setFormData({...formData, bvn: e.target.value})}
-                />
-                <div className="consent-box">
-                  <input type="checkbox" id="bvn-consent" checked={formData.consent} onChange={e => setFormData({...formData, consent: e.target.checked})} />
-                  <label htmlFor="bvn-consent"><strong>Legal Consent:</strong> I authorize PAYPAXA to verify my identity using my Bank Verification Number (BVN).</label>
-                </div>
-              </div>
-            </div>
-
-            <div className="section-subtitle">Operational Details</div>
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Industry / Category</label>
-                <select className="form-select" value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})}>
-                  <option value="">Select an industry...</option>
-                  <option value="ecommerce">E-Commerce & Retail</option>
-                  <option value="education">Education</option>
-                  <option value="digital">Digital Services & Software</option>
-                  <option value="freelance">Freelance & Consulting</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Expected Monthly Volume</label>
-                <select className="form-select" value={formData.volume} onChange={e => setFormData({...formData, volume: e.target.value})}>
-                  <option value="">Select expected volume...</option>
-                  <option value="tier1">Under ₦1,000,000</option>
-                  <option value="tier2">₦1,000,000 - ₦5,000,000</option>
-                  <option value="tier3">Over ₦5,000,000</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="btn-row">
-              <button className="btn-back" onClick={handleBack}>← Back</button>
-              <button 
-                className="btn-primary" 
-                disabled={!formData.firstName || !formData.lastName || !formData.bvn || !formData.consent} 
-                onClick={handleNext}
-              >
-                Proceed to Identity Scan →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: LIVENESS SCAN WITH REVIEW */}
-        {step === 3 && (
-          <div>
-            <h2 className="section-title">Identity Scan</h2>
-            
-            <div className="liveness-container">
-              {livenessState === 'READY' && <div className="camera-instruction">Position your face inside the frame. Ensure you are in a well-lit area.</div>}
-              {livenessState === 'SCANNING' && <div className="camera-instruction" style={{ color: 'var(--brand-primary)' }}>Analyzing face depth... Please hold still.</div>}
-              {livenessState.startsWith('COUNTDOWN') && <div className="camera-instruction" style={{ color: '#10B981' }}>Capturing image... Keep looking at the camera.</div>}
-              {livenessState === 'REVIEW' && <div className="camera-instruction">Photo Captured Successfully</div>}
-
-              <div className={`camera-wrapper ${livenessState === 'SCANNING' || livenessState.startsWith('COUNTDOWN') ? 'scanning' : ''}`}>
-                {livenessState === 'REVIEW' && capturedImage ? (
-                  <div style={{ width: '100%', height: '100%', backgroundImage: `url(${capturedImage})`, backgroundSize: 'cover', backgroundPosition: 'center', transform: 'scaleX(-1)' }} />
-                ) : (
-                  <>
-                    <Webcam
-                      audio={false}
-                      ref={webcamRef}
-                      screenshotFormat="image/jpeg"
-                      className="camera-video"
-                      videoConstraints={{ facingMode: "user", width: 720, height: 720 }}
-                    />
-                    <div className="face-guide"></div>
-                    <div className="scan-line"></div>
-                    
-                    {livenessState === 'COUNTDOWN_3' && <div className="countdown-overlay">3</div>}
-                    {livenessState === 'COUNTDOWN_2' && <div className="countdown-overlay">2</div>}
-                    {livenessState === 'COUNTDOWN_1' && <div className="countdown-overlay">1</div>}
-                  </>
-                )}
-              </div>
-
-              {livenessState === 'READY' && (
-                <button className="btn-primary" onClick={startCaptureSequence} style={{ width: '100%', maxWidth: '320px' }}>
-                  I'm Ready - Start Scan
-                </button>
-              )}
-              
-              {livenessState === 'REVIEW' && (
-                <>
-                  <div className="review-box">
-                    <div className="review-title">Review Your Photo</div>
-                    <div className="review-desc">Is your face clearly visible and well-lit? Blurry or dark photos will be rejected during manual review.</div>
+                
+                <div className={`select-card ${businessType === 'REGISTERED' ? 'active' : ''}`} onClick={() => setBusinessType('REGISTERED')}>
+                  <div className="card-radio"></div>
+                  <div className="card-info">
+                    <h3>Registered Business (Corporate)</h3>
+                    <p>My business is legally registered with the Corporate Affairs Commission (CAC) and has a TIN.</p>
                   </div>
-                  <div style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '400px' }}>
-                    <button className="btn-back" onClick={retakePhoto} style={{ flex: 1 }}>No, Retake Photo</button>
-                    <button className="btn-primary" onClick={handleNext} style={{ flex: 1, background: '#10B981', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>Yes, Looks Good →</button>
-                  </div>
-                </>
-              )}
-            </div>
-            
-            {livenessState === 'READY' && (
-              <div className="btn-row">
-                <button className="btn-back" onClick={handleBack}>← Back</button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* STEP 4: DOCUMENT UPLOADS */}
-        {step === 4 && (
-          <div>
-            <h2 className="section-title">Document Uploads</h2>
-            <div className="form-grid" style={{ gap: '32px' }}>
-              
-              <div className="form-group full">
-                <label className="form-label">Valid Government ID ({businessType === 'REGISTERED' ? "Director" : "Personal"})</label>
-                <div className="file-upload-zone">
-                  <div className="file-upload-text">Click to upload Passport, Driver's License, or NIN</div>
-                  <div className="file-upload-sub">PDF, JPG, or PNG (Max 5MB)</div>
                 </div>
               </div>
 
-              <div className="form-group full">
-                <label className="form-label">Proof of Address (Utility Bill)</label>
-                <div className="file-upload-zone">
-                  <div className="file-upload-text">Click to upload NEPA/Utility Bill</div>
-                  <div className="file-upload-sub">Must be issued within the last 3 months</div>
-                </div>
+              <div className="nav-buttons" style={{ justifyContent: 'flex-end' }}>
+                <button className="btn-solid" disabled={!businessType} onClick={handleNext}>Continue to Profile</button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: PROFILE */}
+          {step === 2 && (
+            <div className="animate-fade-in">
+              <div className="step-header">
+                <h2>{businessType === 'REGISTERED' ? "Director & Corporate Details" : "Personal Details"}</h2>
+                <p>Please enter your details exactly as they appear on your legal documents.</p>
               </div>
 
               {businessType === 'REGISTERED' && (
                 <>
-                  <div className="form-group full">
-                    <label className="form-label">CAC Registration Certificate</label>
-                    <div className="file-upload-zone">
-                      <div className="file-upload-text">Click to upload CAC Certificate</div>
+                  <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Company Info</h4>
+                  <div className="input-grid">
+                    <div className="input-group full">
+                      <label className="input-label">Registered Corporate Name</label>
+                      <input type="text" className="modern-input" placeholder="e.g. Quadrox Tech Limited" value={formData.corporateName} onChange={e => setFormData({...formData, corporateName: e.target.value})} />
                     </div>
-                  </div>
-                  <div className="form-group full">
-                    <label className="form-label">Status Report / Form CAC 1.1</label>
-                    <div className="file-upload-zone">
-                      <div className="file-upload-text">Click to upload Status Report</div>
+                    <div className="input-group">
+                      <label className="input-label">CAC Registration (RC)</label>
+                      <input type="text" className="modern-input" placeholder="RC 1234567" value={formData.rcNumber} onChange={e => setFormData({...formData, rcNumber: e.target.value})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Tax ID (TIN)</label>
+                      <input type="text" className="modern-input" placeholder="Enter FIRS TIN" value={formData.tin} onChange={e => setFormData({...formData, tin: e.target.value})} />
                     </div>
                   </div>
                 </>
               )}
 
-            </div>
-            <div className="btn-row">
-              <button className="btn-back" onClick={handleBack}>← Back</button>
-              <button className="btn-primary" onClick={handleNext}>Proceed to Payouts →</button>
-            </div>
-          </div>
-        )}
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Personal Info</h4>
+              <div className="input-grid">
+                <div className="input-group">
+                  <label className="input-label">First Name</label>
+                  <input type="text" className="modern-input" placeholder="Legal First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Last Name</label>
+                  <input type="text" className="modern-input" placeholder="Legal Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                </div>
+                <div className="input-group full">
+                  <label className="input-label">Bank Verification Number (BVN)</label>
+                  <input type="text" className="modern-input" placeholder="11-digit BVN" maxLength={11} value={formData.bvn} onChange={e => setFormData({...formData, bvn: e.target.value})} />
+                </div>
+              </div>
 
-        {/* STEP 5: SETTLEMENT ACCOUNT */}
-        {step === 5 && (
-          <div>
-            <h2 className="section-title">Settlement Bank Account</h2>
-            <p style={{ color: 'var(--text-med)', marginBottom: '24px', fontSize: '14px' }}>
-              Where should we send your money? For registered businesses, this must be a corporate account matching your CAC name.
-            </p>
+              <div className="nav-buttons">
+                <button className="btn-ghost" onClick={handleBack}>Go Back</button>
+                <button className="btn-solid" disabled={!formData.firstName || !formData.lastName || !formData.bvn} onClick={handleNext}>Continue to Verification</button>
+              </div>
+            </div>
+          )}
 
-            <div className="form-group">
-              <label className="form-label">Select Bank</label>
-              <select className="form-select">
-                <option value="">Choose a bank...</option>
-                <option value="gtb">Guaranty Trust Bank (GTB)</option>
-                <option value="zenith">Zenith Bank</option>
-                <option value="moniepoint">Moniepoint MFB</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Account Number</label>
-              <input type="text" className="form-input" placeholder="Enter 10-digit account number" maxLength={10} />
-            </div>
-            
-            <div className="btn-row">
-              <button className="btn-back" onClick={handleBack}>← Back</button>
-              <Link href="/dashboard" className="btn-primary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Submit for Compliance Review
-              </Link>
-            </div>
-          </div>
-        )}
+          {/* STEP 3: LIVENESS (Prepared for ML implementation) */}
+          {step === 3 && (
+            <div className="animate-fade-in">
+              <div className="step-header" style={{ textAlign: 'center' }}>
+                <h2>Face Verification</h2>
+                <p>We need to verify that you are the true owner of this BVN.</p>
+              </div>
 
+              <div className="camera-container">
+                <div className={`status-pill ${isFaceDetected ? 'success' : ''}`}>
+                  {isFaceDetected ? <><div style={{width: 8, height: 8, borderRadius: '50%', background: '#10B981'}}></div> Face Detected</> : 'Waiting for face...'}
+                </div>
+
+                <div className={`camera-frame ${isFaceDetected ? 'detected' : ''}`}>
+                  {capturedImage ? (
+                    <div style={{ width: '100%', height: '100%', backgroundImage: `url(${capturedImage})`, backgroundSize: 'cover', transform: 'scaleX(-1)' }} />
+                  ) : (
+                    <>
+                      <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" className="camera-video" videoConstraints={{ facingMode: "user" }} />
+                      <div className="camera-overlay"></div>
+                    </>
+                  )}
+                </div>
+
+                {capturedImage ? (
+                  <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '340px' }}>
+                    <button className="modern-input" style={{ background: 'white', cursor: 'pointer', flex: 1, textAlign: 'center' }} onClick={() => setCapturedImage(null)}>Retake</button>
+                    <button className="btn-solid" style={{ flex: 1 }} onClick={handleNext}>Looks Good</button>
+                  </div>
+                ) : (
+                  <button className="btn-solid" style={{ width: '100%', maxWidth: '340px' }} onClick={capturePhoto}>
+                    Capture Photo
+                  </button>
+                )}
+              </div>
+
+              {capturedImage === null && (
+                <div className="nav-buttons">
+                  <button className="btn-ghost" onClick={handleBack}>Go Back</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 4: DOCUMENTS */}
+          {step === 4 && (
+            <div className="animate-fade-in">
+              <div className="step-header">
+                <h2>Required Documents</h2>
+                <p>Please upload clear, legible copies of your documents.</p>
+              </div>
+
+              <div className="input-group" style={{ marginBottom: '24px' }}>
+                <label className="input-label" style={{ marginBottom: '8px' }}>Valid Government ID</label>
+                <div className="upload-zone">
+                  <h4>Click to upload ID</h4>
+                  <p>Passport, Driver's License, or NIN (Max 5MB)</p>
+                </div>
+              </div>
+
+              {businessType === 'REGISTERED' && (
+                <div className="input-group" style={{ marginBottom: '24px' }}>
+                  <label className="input-label" style={{ marginBottom: '8px' }}>CAC Certificate</label>
+                  <div className="upload-zone">
+                    <h4>Click to upload CAC</h4>
+                    <p>PDF or Image (Max 5MB)</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="nav-buttons">
+                <button className="btn-ghost" onClick={handleBack}>Go Back</button>
+                <button className="btn-solid" onClick={handleNext}>Continue</button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 5: SETTLEMENT */}
+          {step === 5 && (
+            <div className="animate-fade-in">
+              <div className="step-header">
+                <h2>Payout Details</h2>
+                <p>Where should we send your money when you withdraw?</p>
+              </div>
+
+              <div className="input-grid">
+                <div className="input-group full">
+                  <label className="input-label">Bank Name</label>
+                  <select className="modern-input">
+                    <option value="">Select a bank</option>
+                    <option value="gtb">Guaranty Trust Bank</option>
+                    <option value="zenith">Zenith Bank</option>
+                    <option value="moniepoint">Moniepoint</option>
+                  </select>
+                </div>
+                <div className="input-group full">
+                  <label className="input-label">Account Number</label>
+                  <input type="text" className="modern-input" placeholder="0000000000" maxLength={10} />
+                </div>
+              </div>
+
+              <div className="nav-buttons">
+                <button className="btn-ghost" onClick={handleBack}>Go Back</button>
+                <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+                  <button className="btn-solid">Submit Application</button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
