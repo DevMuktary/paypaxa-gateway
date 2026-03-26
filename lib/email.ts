@@ -5,7 +5,6 @@ const url = "api.zeptomail.com/";
 const token = process.env.ZEPTOMAIL_TOKEN || "your-zeptomail-token";
 const SENDER_EMAIL = process.env.ZEPTOMAIL_SENDER_EMAIL || "noreply@paypaxa.com";
 const SENDER_NAME = "PAYPAXA";
-const BOUNCE_EMAIL = process.env.ZEPTOMAIL_BOUNCE_EMAIL || "bounce@paypaxa.com";
 
 const client = new SendMailClient({ url, token });
 
@@ -44,7 +43,6 @@ export async function sendVerificationEmail(recipientEmail: string, verification
     `;
 
     await client.sendMail({
-      bounce_address: BOUNCE_EMAIL,
       from: { address: SENDER_EMAIL, name: SENDER_NAME },
       to: [{ email_address: { address: recipientEmail, name: "Merchant" } }],
       subject: "Verify your PAYPAXA Account",
@@ -59,7 +57,6 @@ export async function sendVerificationEmail(recipientEmail: string, verification
 }
 
 // 2. Login Two-Factor (2FA) OTP Email
-// Updated to accept the firstName argument and use it in the email!
 export async function sendTwoFactorEmail(recipientEmail: string, firstName: string, otpCode: string) {
   try {
     const htmlContent = `
@@ -94,9 +91,7 @@ export async function sendTwoFactorEmail(recipientEmail: string, firstName: stri
     `;
 
     await client.sendMail({
-      bounce_address: BOUNCE_EMAIL,
       from: { address: SENDER_EMAIL, name: SENDER_NAME },
-      // ZeptoMail SDK gets the actual user's first name here too
       to: [{ email_address: { address: recipientEmail, name: firstName } }],
       subject: "Your PAYPAXA Login OTP",
       htmlbody: htmlContent,
