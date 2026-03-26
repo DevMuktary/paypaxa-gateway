@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import Webcam from 'react-webcam';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
-// We import ONLY the TypeScript types here. 
-// The actual heavy AI code is dynamically imported later to prevent server crashes.
+// 🚀 CRITICAL FIX: Forces the webcam to ONLY load in the browser, preventing 503 Server Crashes!
+const Webcam = dynamic(() => import('react-webcam'), { ssr: false });
+
 import type * as blazefaceType from '@tensorflow-models/blazeface';
 
 export default function CompliancePage() {
@@ -14,13 +15,13 @@ export default function CompliancePage() {
   const [isClient, setIsClient] = useState(false);
 
   // TFJS Liveness State
-  const webcamRef = useRef<Webcam>(null);
+  const webcamRef = useRef<any>(null); // Set to any to bypass strict type matching on dynamic import
   const requestRef = useRef<number>();
   const modelRef = useRef<blazefaceType.BlazeFaceModel | null>(null);
   
   const [modelLoading, setModelLoading] = useState(false);
   const [faceStatus, setFaceStatus] = useState<'START' | 'NO_FACE' | 'MOVE_CLOSER' | 'CENTER_FACE' | 'HOLD_STILL' | 'CAPTURED'>('START');
-  const [holdProgress, setHoldProgress] = useState(0); // 0 to 100
+  const [holdProgress, setHoldProgress] = useState(0); 
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -28,7 +29,6 @@ export default function CompliancePage() {
     industry: '', volume: '', corporateName: '', rcNumber: '', tin: '', bankCode: '', accountNumber: ''
   });
 
-  // Protects against SSR errors by ensuring rendering only happens on the client browser
   useEffect(() => {
     setIsClient(true);
     return () => {
@@ -36,16 +36,13 @@ export default function CompliancePage() {
     };
   }, []);
 
-  // Initialize the BlazeFace AI model DYNAMICALLY to prevent 503 Server Crashes
   useEffect(() => {
     if (step === 3 && !modelRef.current) {
       const loadModel = async () => {
         setModelLoading(true);
         try {
-          // Dynamic imports: These only run in the user's browser, keeping your server 100% safe
           const tf = await import('@tensorflow/tfjs');
           const blazeface = await import('@tensorflow-models/blazeface');
-          
           await tf.ready();
           modelRef.current = await blazeface.load();
         } catch (error) {
@@ -58,7 +55,6 @@ export default function CompliancePage() {
     }
   }, [step]);
 
-  // Real-time Face Tracking Loop
   const detectFace = useCallback(async () => {
     if (!webcamRef.current || !modelRef.current || faceStatus === 'CAPTURED') return;
     
@@ -70,7 +66,6 @@ export default function CompliancePage() {
         setFaceStatus('NO_FACE');
         setHoldProgress(0);
       } else {
-        // Grab the first face detected
         const face = predictions[0];
         const topLeft = face.topLeft as [number, number];
         const bottomRight = face.bottomRight as [number, number];
@@ -79,14 +74,12 @@ export default function CompliancePage() {
         const faceCenterX = topLeft[0] + (faceWidth / 2);
         const faceCenterY = topLeft[1] + ((bottomRight[1] - topLeft[1]) / 2);
 
-        // Video dimensions
         const videoWidth = video.videoWidth;
         const videoHeight = video.videoHeight;
 
-        // Validation Rules
-        const isCenteredX = Math.abs(faceCenterX - (videoWidth / 2)) < (videoWidth * 0.15); // Within 15% of center
+        const isCenteredX = Math.abs(faceCenterX - (videoWidth / 2)) < (videoWidth * 0.15); 
         const isCenteredY = Math.abs(faceCenterY - (videoHeight / 2)) < (videoHeight * 0.15);
-        const isLargeEnough = faceWidth > (videoWidth * 0.35); // Face takes up at least 35% of the frame width
+        const isLargeEnough = faceWidth > (videoWidth * 0.35); 
 
         if (!isLargeEnough) {
           setFaceStatus('MOVE_CLOSER');
@@ -97,7 +90,7 @@ export default function CompliancePage() {
         } else {
           setFaceStatus('HOLD_STILL');
           setHoldProgress((prev) => {
-            const next = prev + 4; // Increases every frame. Takes ~1.5 seconds to hit 100.
+            const next = prev + 4; 
             if (next >= 100) {
               const imageSrc = webcamRef.current?.getScreenshot();
               if (imageSrc) {
@@ -112,11 +105,9 @@ export default function CompliancePage() {
       }
     }
     
-    // Request next frame safely
     requestRef.current = requestAnimationFrame(detectFace);
   }, [faceStatus]);
 
-  // Manage scanning loop lifecycle
   useEffect(() => {
     if (['NO_FACE', 'MOVE_CLOSER', 'CENTER_FACE', 'HOLD_STILL'].includes(faceStatus)) {
       requestRef.current = requestAnimationFrame(detectFace);
@@ -245,7 +236,7 @@ export default function CompliancePage() {
         }
       `}} />
 
-      {/* MOBILE HEADER (Only visible on small screens) */}
+      {/* MOBILE HEADER */}
       <div className="mobile-header">
         <div className="mobile-header-top">
           <div className="mobile-brand">PAYPAXA</div>
@@ -278,7 +269,6 @@ export default function CompliancePage() {
       <div className="main-content">
         <div className="form-container">
           
-          {/* STEP 1: BUSINESS TYPE */}
           {step === 1 && (
             <div>
               <h1 className="page-title">Entity Configuration</h1>
@@ -315,7 +305,6 @@ export default function CompliancePage() {
             </div>
           )}
 
-          {/* STEP 2: PROFILE */}
           {step === 2 && (
             <div>
               <h1 className="page-title">Identity Profile</h1>
@@ -379,7 +368,6 @@ export default function CompliancePage() {
             </div>
           )}
 
-          {/* STEP 3: AI LIVENESS SCAN */}
           {step === 3 && (
             <div>
               <h1 className="page-title">Liveness Verification</h1>
@@ -429,7 +417,6 @@ export default function CompliancePage() {
             </div>
           )}
 
-          {/* STEP 4: DOCUMENTS */}
           {step === 4 && (
             <div>
               <h1 className="page-title">Document Uploads</h1>
@@ -460,7 +447,6 @@ export default function CompliancePage() {
             </div>
           )}
 
-          {/* STEP 5: SETTLEMENT */}
           {step === 5 && (
             <div>
               <h1 className="page-title">Payout Account</h1>
