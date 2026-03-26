@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
-// 🚀 CRITICAL FIX: Forces the webcam to ONLY load in the browser, preventing 503 Server Crashes!
-const Webcam = dynamic(() => import('react-webcam'), { ssr: false });
+// 🚀 CRITICAL FIX: Forces webcam to load only in browser AND bypasses strict TS prop checking
+const Webcam = dynamic(() => import('react-webcam').then((mod) => mod.default as any), { ssr: false });
 
 import type * as blazefaceType from '@tensorflow-models/blazeface';
 
@@ -15,7 +15,7 @@ export default function CompliancePage() {
   const [isClient, setIsClient] = useState(false);
 
   // TFJS Liveness State
-  const webcamRef = useRef<any>(null); // Set to any to bypass strict type matching on dynamic import
+  const webcamRef = useRef<any>(null); 
   const requestRef = useRef<number>();
   const modelRef = useRef<blazefaceType.BlazeFaceModel | null>(null);
   
