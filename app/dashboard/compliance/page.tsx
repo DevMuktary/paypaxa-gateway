@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
-// 🚀 CRITICAL FIX: Forces webcam to load only in browser AND bypasses strict TS prop checking
-const Webcam = dynamic(() => import('react-webcam').then((mod) => mod.default as any), { ssr: false });
+// 🚀 CRITICAL FIX: Cast the entire component to 'any' to bypass Next.js strict JSX prop checking completely
+const Webcam: any = dynamic(() => import('react-webcam'), { ssr: false });
 
 import type * as blazefaceType from '@tensorflow-models/blazeface';
 
