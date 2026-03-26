@@ -4,11 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
-// 🚀 THE FIX: Cast the imported module as a generic React Component to bypass strict internal type clashes
-const Webcam = dynamic(
-  () => import('react-webcam').then((mod) => mod.default as React.ComponentType<any>),
-  { ssr: false }
-);
+const Webcam: any = dynamic(() => import('react-webcam'), { ssr: false });
 
 import type * as blazefaceType from '@tensorflow-models/blazeface';
 
@@ -22,8 +18,11 @@ export default function CompliancePage() {
   const requestRef = useRef<number>();
   const modelRef = useRef<blazefaceType.BlazeFaceModel | null>(null);
   
-  const [modelLoading, setModelLoading] = useState(false);
-  const [faceStatus, setFaceStatus] = useState<'START' | 'NO_FACE' | 'MOVE_CLOSER' | 'CENTER_FACE' | 'HOLD_STILL' | 'CAPTURED'>('START');
+  // Anti-Spoofing History Array
+  const movementHistory = useRef<{x: number, y: number}[]>([]);
+  
+  const [modelLoading, setModelLoading] = useState(true);
+  const [faceStatus, setFaceStatus] = useState<'START' | 'NO_FACE' | 'MOVE_CLOSER' | 'CENTER_FACE' | 'HOLD_STILL' | 'STATIC_DETECTED' | 'CAPTURED'>('START');
   const [holdProgress, setHoldProgress] = useState(0); 
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
@@ -39,25 +38,30 @@ export default function CompliancePage() {
     };
   }, []);
 
+  // 🚀 BACKGROUND PRE-LOADING FIX: Starts downloading AI instantly on page load
   useEffect(() => {
-    if (step === 3 && !modelRef.current) {
-      const loadModel = async () => {
-        setModelLoading(true);
-        try {
-          const tf = await import('@tensorflow/tfjs');
-          const blazeface = await import('@tensorflow-models/blazeface');
-          await tf.ready();
-          modelRef.current = await blazeface.load();
-        } catch (error) {
-          console.error("Failed to load AI model", error);
-        } finally {
+    let isMounted = true;
+    const loadModelInBackground = async () => {
+      try {
+        const tf = await import('@tensorflow/tfjs');
+        const blazeface = await import('@tensorflow-models/blazeface');
+        await tf.ready();
+        const loadedModel = await blazeface.load();
+        if (isMounted) {
+          modelRef.current = loadedModel;
           setModelLoading(false);
+          console.log("AI Liveness Model Pre-loaded Successfully");
         }
-      };
-      loadModel();
-    }
-  }, [step]);
+      } catch (error) {
+        console.error("Failed to load AI model", error);
+      }
+    };
+    loadModelInBackground();
+    
+    return () => { isMounted = false; };
+  }, []);
 
+  // 🚀 REAL-TIME ANTI-SPOOFING LOOP
   const detectFace = useCallback(async () => {
     if (!webcamRef.current || !modelRef.current || faceStatus === 'CAPTURED') return;
     
@@ -68,6 +72,7 @@ export default function CompliancePage() {
       if (predictions.length === 0) {
         setFaceStatus('NO_FACE');
         setHoldProgress(0);
+        movementHistory.current = []; // Reset history
       } else {
         const face = predictions[0];
         const topLeft = face.topLeft as [number, number];
@@ -87,23 +92,46 @@ export default function CompliancePage() {
         if (!isLargeEnough) {
           setFaceStatus('MOVE_CLOSER');
           setHoldProgress(0);
+          movementHistory.current = [];
         } else if (!isCenteredX || !isCenteredY) {
           setFaceStatus('CENTER_FACE');
           setHoldProgress(0);
+          movementHistory.current = [];
         } else {
-          setFaceStatus('HOLD_STILL');
-          setHoldProgress((prev) => {
-            const next = prev + 4; 
-            if (next >= 100) {
-              const imageSrc = webcamRef.current?.getScreenshot();
-              if (imageSrc) {
-                setCapturedImage(imageSrc);
-                setFaceStatus('CAPTURED');
+          // ANTI-SPOOFING CHECK: Record micro-movements
+          movementHistory.current.push({ x: faceCenterX, y: faceCenterY });
+          if (movementHistory.current.length > 30) { // Keep last ~0.5 seconds of frames
+            movementHistory.current.shift();
+          }
+
+          // Calculate movement variance to detect photos
+          let variance = 100; // Default to safe
+          if (movementHistory.current.length === 30) {
+            const xs = movementHistory.current.map(p => p.x);
+            const maxDiffX = Math.max(...xs) - Math.min(...xs);
+            variance = maxDiffX;
+          }
+
+          if (variance < 1.5 && movementHistory.current.length === 30) {
+            // Face is completely frozen. It's a static image.
+            setFaceStatus('STATIC_DETECTED');
+            setHoldProgress(0);
+            movementHistory.current = [];
+          } else {
+            setFaceStatus('HOLD_STILL');
+            setHoldProgress((prev) => {
+              const next = prev + 3; // Takes ~2 seconds to verify
+              if (next >= 100) {
+                const imageSrc = webcamRef.current?.getScreenshot();
+                if (imageSrc) {
+                  setCapturedImage(imageSrc);
+                  setFaceStatus('CAPTURED');
+                }
+                return 100;
               }
-              return 100;
-            }
-            return next;
-          });
+              return next;
+            });
+          }
         }
       }
     }
@@ -112,7 +140,7 @@ export default function CompliancePage() {
   }, [faceStatus]);
 
   useEffect(() => {
-    if (['NO_FACE', 'MOVE_CLOSER', 'CENTER_FACE', 'HOLD_STILL'].includes(faceStatus)) {
+    if (['NO_FACE', 'MOVE_CLOSER', 'CENTER_FACE', 'HOLD_STILL', 'STATIC_DETECTED'].includes(faceStatus)) {
       requestRef.current = requestAnimationFrame(detectFace);
     }
     return () => {
@@ -120,10 +148,15 @@ export default function CompliancePage() {
     };
   }, [faceStatus, detectFace]);
 
-  const startScan = () => setFaceStatus('NO_FACE');
+  const startScan = () => {
+    movementHistory.current = [];
+    setFaceStatus('NO_FACE');
+  };
+  
   const retakePhoto = () => {
     setCapturedImage(null);
     setHoldProgress(0);
+    movementHistory.current = [];
     setFaceStatus('START');
   };
 
@@ -145,7 +178,6 @@ export default function CompliancePage() {
       <style dangerouslySetInnerHTML={{__html: `
         .compliance-layout { display: flex; min-height: 100vh; background: #F9FAFB; font-family: 'Inter', system-ui, sans-serif; }
         
-        /* SIDEBAR (DESKTOP ONLY) */
         .sidebar { width: 340px; background: #FFFFFF; border-right: 1px solid #E5E7EB; padding: 40px; display: flex; flex-direction: column; position: fixed; height: 100vh; overflow-y: auto; z-index: 10; }
         .brand-logo { font-size: 24px; font-weight: 900; color: #111827; margin-bottom: 48px; letter-spacing: -0.5px; }
         
@@ -162,7 +194,6 @@ export default function CompliancePage() {
         .step-text p { margin: 0; font-size: 13px; color: #6B7280; }
         .step-item:not(.active):not(.completed) .step-text h4 { color: #9CA3AF; }
 
-        /* MOBILE HEADER (APP-LIKE) */
         .mobile-header { display: none; background: #FFFFFF; padding: 20px; border-bottom: 1px solid #E5E7EB; position: sticky; top: 0; z-index: 20; }
         .mobile-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .mobile-brand { font-size: 18px; font-weight: 800; color: #111827; }
@@ -170,7 +201,6 @@ export default function CompliancePage() {
         .mobile-progress-bar { height: 4px; background: #F3F4F6; border-radius: 4px; overflow: hidden; }
         .mobile-progress-fill { height: 100%; background: #3B82F6; transition: width 0.3s ease; }
 
-        /* MAIN CONTENT PANE */
         .main-content { flex: 1; margin-left: 340px; padding: 60px 40px; display: flex; justify-content: center; }
         .form-container { width: 100%; max-width: 600px; }
         
@@ -178,7 +208,6 @@ export default function CompliancePage() {
         .page-sub { font-size: 15px; color: #6B7280; margin: 0 0 40px 0; line-height: 1.5; }
         .section-divider { font-size: 14px; font-weight: 700; color: #111827; margin: 32px 0 16px 0; border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* FORM INPUTS */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { margin-bottom: 20px; }
         .form-group.full { grid-column: 1 / -1; }
@@ -187,7 +216,6 @@ export default function CompliancePage() {
         .form-input:focus, .form-select:focus { border-color: #3B82F6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
         .form-input::placeholder { color: #9CA3AF; }
 
-        /* CARDS & ZONES */
         .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .type-card { background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; padding: 24px; cursor: pointer; transition: 0.2s; text-align: left; }
         .type-card:hover { border-color: #D1D5DB; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
@@ -204,7 +232,6 @@ export default function CompliancePage() {
         .consent-box input { margin-top: 4px; width: 18px; height: 18px; cursor: pointer; accent-color: #3B82F6; }
         .consent-box label { font-size: 13px; color: #111827; line-height: 1.5; cursor: pointer; }
 
-        /* CAMERA UI */
         .camera-section { display: flex; flex-direction: column; align-items: center; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 24px; padding: 40px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         .video-mask { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; position: relative; margin: 0 auto 32px auto; background: #111827; box-shadow: 0 0 0 8px #F3F4F6, 0 10px 25px rgba(0,0,0,0.1); transform: translateZ(0); }
         .video-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
@@ -217,7 +244,6 @@ export default function CompliancePage() {
 
         .progress-ring { position: absolute; inset: 0; border-radius: 50%; border: 8px solid transparent; border-top-color: #10B981; border-right-color: #10B981; transition: transform 0.1s linear; z-index: 10; pointer-events: none; }
 
-        /* BUTTONS */
         .btn-row { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 24px; border-top: 1px solid #E5E7EB; gap: 16px; }
         .btn { padding: 16px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
         .btn-outline { background: transparent; border: 1px solid #D1D5DB; color: #374151; }
@@ -239,7 +265,6 @@ export default function CompliancePage() {
         }
       `}} />
 
-      {/* MOBILE HEADER */}
       <div className="mobile-header">
         <div className="mobile-header-top">
           <div className="mobile-brand">PAYPAXA</div>
@@ -250,7 +275,6 @@ export default function CompliancePage() {
         </div>
       </div>
 
-      {/* DESKTOP SIDEBAR */}
       <div className="sidebar">
         <div className="brand-logo">PAYPAXA</div>
         <div className="steps-container">
@@ -268,7 +292,6 @@ export default function CompliancePage() {
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
       <div className="main-content">
         <div className="form-container">
           
@@ -377,12 +400,13 @@ export default function CompliancePage() {
               <p className="page-sub">We need to ensure you are a real person matching the submitted identity. Please remove glasses and hats.</p>
 
               <div className="camera-section">
-                {modelLoading && <div className="status-badge status-ready"><svg className="animate-spin" style={{ display: 'inline', marginRight: '8px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Loading AI Model...</div>}
+                {modelLoading && <div className="status-badge status-ready"><svg className="animate-spin" style={{ display: 'inline', marginRight: '8px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> AI Initializing...</div>}
                 
                 {!modelLoading && faceStatus === 'START' && <div className="status-badge status-ready">Camera Ready</div>}
                 {!modelLoading && faceStatus === 'NO_FACE' && <div className="status-badge status-error">No face detected</div>}
                 {!modelLoading && faceStatus === 'MOVE_CLOSER' && <div className="status-badge status-error">Move closer to camera</div>}
                 {!modelLoading && faceStatus === 'CENTER_FACE' && <div className="status-badge status-error">Center your face in the circle</div>}
+                {!modelLoading && faceStatus === 'STATIC_DETECTED' && <div className="status-badge status-error">Static Image Detected! Use a real face.</div>}
                 {!modelLoading && faceStatus === 'HOLD_STILL' && <div className="status-badge status-capturing">Hold still... {Math.floor(holdProgress)}%</div>}
                 {!modelLoading && faceStatus === 'CAPTURED' && <div className="status-badge status-good">Scan Complete</div>}
 
