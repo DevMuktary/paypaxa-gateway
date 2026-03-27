@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
+// @ts-ignore: Bypasses Next.js strict TS compiler checking the internal react-webcam defaultProps
 const Webcam: any = dynamic(() => import('react-webcam'), { ssr: false });
 import type * as blazefaceType from '@tensorflow-models/blazeface';
 
