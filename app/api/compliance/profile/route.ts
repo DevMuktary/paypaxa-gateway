@@ -1,18 +1,43 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getSession } from '@/lib/auth'; // Assuming your JWT logic is here based on your previous code
+import { getSession } from '@/lib/auth'; // Ensure this matches your actual auth import
 
 const prisma = new PrismaClient();
 
-// 1. LOAD DATA (When the user opens the page on any device)
+// Helper function to resolve which business the user is currently editing
+async function getTargetBusiness(userId: string, requestedBusinessId?: string | null) {
+  if (requestedBusinessId) {
+    // Strict Security Check: Ensure the logged-in user actually owns this specific business
+    return await prisma.business.findFirst({
+      where: { id: requestedBusinessId, userId: userId }
+    });
+  }
+  
+  // Fallback for MVP: If no business ID is passed, grab their most recent business
+  return await prisma.business.findFirst({
+    where: { userId: userId },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+// 1. LOAD DATA (When the user opens the page)
 export async function GET(request: Request) {
   try {
     const session = await getSession();
     if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Fetch the user's compliance record from Prisma
+    // Extract optional businessId from the URL (e.g., ?businessId=xyz)
+    const { searchParams } = new URL(request.url);
+    const requestedBusinessId = searchParams.get('businessId');
+
+    const business = await getTargetBusiness(session.id, requestedBusinessId);
+    if (!business) {
+      return NextResponse.json({ error: 'No business found for this user' }, { status: 404 });
+    }
+
+    // Fetch the compliance record SPECIFICALLY for this business
     const compliance = await prisma.compliance.findUnique({
-      where: { userId: session.id }
+      where: { businessId: business.id }
     });
 
     return NextResponse.json(compliance || {}, { status: 200 });
@@ -29,10 +54,17 @@ export async function POST(request: Request) {
     if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
+    
+    // The frontend can pass businessId in the body if the user switched businesses
+    const business = await getTargetBusiness(session.id, body.businessId);
+    if (!business) {
+      return NextResponse.json({ error: 'Invalid business context' }, { status: 403 });
+    }
 
-    // Upsert: Update if it exists, Create if it doesn't
+    // Upsert: Update if it exists, Create if it doesn't. 
+    // Isolated entirely to the specific businessId.
     const savedProfile = await prisma.compliance.upsert({
-      where: { userId: session.id },
+      where: { businessId: business.id },
       update: {
         businessType: body.businessType,
         tradingName: body.tradingName,
@@ -45,7 +77,7 @@ export async function POST(request: Request) {
         registrationType: body.registrationType,
       },
       create: {
-        userId: session.id,
+        businessId: business.id,
         businessType: body.businessType,
         tradingName: body.tradingName,
         description: body.description,
