@@ -27,6 +27,13 @@ enum TransactionStatus {
   REFUNDED
 }
 
+enum ComplianceStatus {
+  DRAFT           // User is still filling out the forms
+  PENDING_REVIEW  // User has submitted, waiting for Admin
+  APPROVED        // Admin approved, LIVE mode unlocked
+  REJECTED        // Admin rejected, needs corrections
+}
+
 // --- MODELS ---
 
 // 1. The Gateway User (The human logging in)
@@ -37,7 +44,7 @@ model User {
   lastName        String?
   passwordHash    String
   
-  // Security & Auth (Unified for Email Verification and 2FA)
+  // Security & Auth
   isEmailVerified Boolean    @default(false)
   twoFactorOtp    String?
   twoFactorExpiry DateTime?
@@ -45,7 +52,7 @@ model User {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  // A single user can own multiple businesses (Enforced to max 3 via API)
+  // A single user can own multiple businesses
   businesses      Business[] 
 }
 
@@ -68,28 +75,88 @@ model Business {
   apiKeys         ApiKey[]
   transactions    Transaction[]
   customers       Customer[]
+  
+  // 🚀 CRITICAL: 1-to-1 relationship with Compliance. Every business gets its own isolated record.
+  compliance      Compliance?
 
   // Prevents a user from creating two businesses with the exact same name
   @@unique([userId, name])
 }
 
-// 3. Developer API Keys (Separated by Sandbox/Live)
+// 3. Compliance & KYC Data (Isolated per Business)
+model Compliance {
+  id                String   @id @default(uuid())
+  businessId        String   @unique
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  status            ComplianceStatus @default(DRAFT)
+
+  // --- Step 1: Profile ---
+  businessType      String?  // 'STARTER' | 'REGISTERED'
+  tradingName       String?
+  description       String?  @db.Text
+  staffSize         String?
+  salesVolume       String?
+  industry          String?
+  category          String?
+  legalBusinessName String?
+  registrationType  String?
+
+  // --- Step 2: Contact & Location ---
+  generalEmail      String?
+  supportEmail      String?
+  disputesEmail     String?
+  phone             String?
+  website           String?
+  twitter           String?
+  facebook          String?
+  instagram         String?
+  state             String?
+  lga               String?
+  city              String?
+  street            String?
+  building          String?
+
+  // --- Step 3 & 4: Identity & Owners ---
+  firstName         String?
+  lastName          String?
+  dob               String?
+  bvn               String?
+  bvnConsent        Boolean  @default(false)
+  livenessImage     String?  @db.Text // Base64 or AWS/Cloudinary URL
+
+  // --- Step 5: Documents ---
+  idDocumentUrl     String?  @db.Text
+  cacDocumentUrl    String?  @db.Text
+  statusReportUrl   String?  @db.Text
+
+  // --- Step 6: Settlement Account ---
+  bankName          String?
+  bankCode          String?
+  accountNumber     String?
+  accountName       String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// 4. Developer API Keys (Separated by Sandbox/Live)
 model ApiKey {
   id              String      @id @default(uuid())
   businessId      String
   environment     Environment @default(SANDBOX)
   
   publicKey       String      @unique // e.g., pk_test_12345
-  secretKey       String      @unique // Stored raw during MVP so we can reveal it in the UI
-  webhookUrl      String?     // The merchant's endpoint for payment callbacks
+  secretKey       String      @unique 
+  webhookUrl      String?     
   
   createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt // Tracks when the key or webhook was last modified
+  updatedAt       DateTime    @updatedAt 
 
   business        Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
-// 4. The End Customer (The person paying the Merchant)
+// 5. The End Customer (The person paying the Merchant)
 model Customer {
   id              String      @id @default(uuid())
   businessId      String
@@ -103,24 +170,23 @@ model Customer {
   business        Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   transactions    Transaction[]
 
-  // A business cannot have duplicate customer emails
   @@unique([businessId, email]) 
 }
 
-// 5. The Financial Ledger (Transactions)
+// 6. The Financial Ledger (Transactions)
 model Transaction {
   id              String            @id @default(uuid())
   businessId      String
   customerId      String?
   
   environment     Environment       @default(SANDBOX)
-  amount          Decimal           @db.Decimal(12, 2) // Precise financial decimal to prevent rounding errors
+  amount          Decimal           @db.Decimal(12, 2) 
   currency        String            @default("NGN")
-  reference       String            @unique // The merchant's custom reference
-  gatewayRef      String            @unique // PAYPAXA's internal tracking reference
+  reference       String            @unique 
+  gatewayRef      String            @unique 
   
   status          TransactionStatus @default(PENDING)
-  paymentMethod   String?           // e.g., "CARD", "TRANSFER", "USSD"
+  paymentMethod   String?           
   
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
