@@ -19,61 +19,104 @@ export default function ComplianceLayout({ children }: { children: React.ReactNo
   return (
     <div className="compliance-wrapper">
       <style dangerouslySetInnerHTML={{__html: `
-        :root {
-          --brand-dark: #0B192C; 
-          --brand-primary: #1A56DB; 
-          --brand-light: #EFF6FF;
-          --bg-main: #F4F7FE;
-          --card-bg: #FFFFFF;
-          --text-main: #111827;
-          --text-muted: #64748B;
-          --border-color: #E2E8F0;
+        /* Inherits your global layout colors, no hardcoded #hex backgrounds */
+        .compliance-wrapper { 
+          display: flex; 
+          align-items: flex-start;
+          gap: 24px; 
+          max-width: 900px; 
+          margin: 0 auto; 
+          padding: 24px 16px;
+          font-family: inherit;
+        }
+        
+        .compliance-sidebar { 
+          width: 220px; 
+          flex-shrink: 0; 
+          position: sticky; 
+          top: 24px; 
+        }
+        
+        .nav-item { 
+          display: block; 
+          padding: 10px 12px; 
+          border-radius: 6px; 
+          color: inherit; 
+          font-weight: 500; 
+          font-size: 14px; 
+          text-decoration: none; 
+          margin-bottom: 4px; 
+          transition: background-color 0.2s;
+          opacity: 0.7;
+        }
+        
+        .nav-item:hover { 
+          background-color: rgba(128, 128, 128, 0.1); 
+          opacity: 1;
+        }
+        
+        .nav-item.active { 
+          background-color: rgba(128, 128, 128, 0.15); 
+          font-weight: 600; 
+          opacity: 1;
+          border-left: 3px solid currentColor;
         }
 
-        @media (prefers-color-scheme: dark) {
-          :root {
-            --bg-main: #060D18;
-            --card-bg: #0B192C;
-            --text-main: #F9FAFB;
-            --text-muted: #9CA3AF;
-            --border-color: #1E293B;
-            --brand-primary: #3B82F6;
-          }
+        .compliance-main { 
+          flex: 1; 
+          width: 100%;
+          background-color: rgba(128, 128, 128, 0.03);
+          border: 1px solid rgba(128, 128, 128, 0.2);
+          border-radius: 8px; 
+          padding: 24px; 
         }
 
-        .compliance-wrapper { display: flex; min-height: 100vh; background: var(--bg-main); font-family: 'Inter', system-ui, sans-serif; padding: 40px 20px; justify-content: center; gap: 32px; }
-        
-        .sidebar { width: 280px; background: var(--card-bg); border-radius: 16px; padding: 32px 24px; border: 1px solid var(--border-color); height: fit-content; position: sticky; top: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-        .sidebar-title { font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .nav-item { display: block; padding: 12px 16px; border-radius: 8px; color: var(--text-main); font-weight: 600; font-size: 14px; text-decoration: none; margin-bottom: 8px; transition: 0.2s; border-left: 3px solid transparent; }
-        .nav-item:hover { background: var(--bg-main); }
-        .nav-item.active { background: var(--brand-light); color: var(--brand-primary); border-left-color: var(--brand-primary); }
-
-        .main-content { flex: 1; max-width: 760px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color); padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-
-        /* Shared Form Styles for all child pages */
-        .page-title { font-size: 24px; font-weight: 800; color: var(--text-main); margin: 0 0 32px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; }
-        .input-group { margin-bottom: 24px; }
-        .input-label { display: block; font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
-        .input-field, .input-select, .input-textarea { width: 100%; padding: 14px 16px; background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 14px; outline: none; transition: 0.2s; font-family: inherit; }
-        .input-field:focus, .input-select:focus, .input-textarea:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px var(--brand-light); background: var(--card-bg); }
-        .input-textarea { resize: vertical; min-height: 100px; }
-        .help-text { font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block; }
+        /* Global Form Styles for all steps */
+        .page-title { font-size: 18px; font-weight: 600; margin: 0 0 24px 0; padding-bottom: 12px; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+        .input-group { margin-bottom: 16px; }
+        .input-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.9; }
+        .input-field, .input-select, .input-textarea { 
+          width: 100%; 
+          padding: 8px 12px; 
+          background-color: transparent; 
+          border: 1px solid rgba(128, 128, 128, 0.3); 
+          border-radius: 6px; 
+          color: inherit; 
+          font-size: 14px; 
+          outline: none; 
+          transition: border-color 0.2s; 
+          font-family: inherit; 
+        }
+        .input-field:focus, .input-select:focus, .input-textarea:focus { border-color: currentColor; }
+        .input-textarea { resize: vertical; min-height: 80px; }
+        .help-text { font-size: 12px; opacity: 0.6; margin-top: 4px; display: block; }
         .required-star { color: #EF4444; }
 
-        .btn-primary { background: var(--brand-dark); color: #FFFFFF; padding: 14px 24px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; transition: 0.2s; float: right; margin-top: 16px; }
-        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary { 
+          background-color: currentColor; 
+          color: var(--background, #FFF); /* Inverts text color based on current mode */
+          padding: 10px 16px; 
+          border-radius: 6px; 
+          font-weight: 500; 
+          font-size: 14px; 
+          border: none; 
+          cursor: pointer; 
+          transition: opacity 0.2s; 
+          margin-top: 16px; 
+        }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-primary:active { transform: scale(0.98); } /* Replaces the ugly white blur with a simple press effect */
 
-        @media (max-width: 900px) {
-          .compliance-wrapper { flex-direction: column; padding: 16px; }
-          .sidebar { width: 100%; position: relative; top: 0; padding: 20px; }
-          .main-content { width: 100%; padding: 24px 16px; }
+        @media (max-width: 768px) {
+          .compliance-wrapper { flex-direction: column; padding: 16px 12px; gap: 16px; }
+          .compliance-sidebar { width: 100%; position: relative; top: 0; display: flex; overflow-x: auto; padding-bottom: 8px; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+          .nav-item { white-space: nowrap; margin-bottom: 0; margin-right: 8px; border-left: none; border-bottom: 2px solid transparent; border-radius: 4px; }
+          .nav-item.active { border-left: none; border-bottom: 2px solid currentColor; }
+          .compliance-main { padding: 16px; border: none; background: transparent; }
         }
       `}} />
 
-      <div className="sidebar">
-        <div className="sidebar-title">Activation Settings</div>
+      <div className="compliance-sidebar">
         {navItems.map((item) => (
           <Link 
             key={item.name} 
@@ -85,7 +128,7 @@ export default function ComplianceLayout({ children }: { children: React.ReactNo
         ))}
       </div>
 
-      <div className="main-content">
+      <div className="compliance-main">
         {children}
       </div>
     </div>
