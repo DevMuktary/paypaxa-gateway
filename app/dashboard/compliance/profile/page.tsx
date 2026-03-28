@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Clean, Reusable Tooltip Component for the input labels
+// Tooltip Component
 const TooltipLabel = ({ label, required, tooltipText }: { label: string, required?: boolean, tooltipText?: string }) => {
   const [show, setShow] = useState(false);
   return (
@@ -32,6 +32,35 @@ const TooltipLabel = ({ label, required, tooltipText }: { label: string, require
   );
 };
 
+// Legally refined, distinct industry list
+const INDUSTRIES = [
+  { id: 'agriculture', name: 'Agriculture', desc: 'Farming, livestock, fisheries, logging, and forestry operations.' },
+  { id: 'automotive', name: 'Automotive', desc: 'Vehicle manufacturing, sales, repairs, and auto parts distribution.' },
+  { id: 'clothing', name: 'Clothing & Accessories', desc: 'Apparel, footwear, jewelry, and wearable fashion accessories.' },
+  { id: 'digital_goods', name: 'Digital Goods', desc: 'Intangible retail products like software, digital art, and subscriptions.' },
+  { id: 'digital_services', name: 'Digital Services', desc: 'Cloud software, online marketing, web hosting, and virtual consulting.' },
+  { id: 'education', name: 'Education', desc: 'Public and private institutions offering training, schooling, and academic programs.' },
+  { id: 'electronics', name: 'Electronics', desc: 'Consumer tech, gadgets, computers, and home appliances.' },
+  { id: 'financial_services', name: 'Financial Services', desc: 'Banks, lenders, brokers, insurers, and investment agencies.' },
+  { id: 'gaming', name: 'Gaming', desc: 'Betting, wagering, lotteries, and prediction platforms.' },
+  { id: 'general_services', name: 'General Services', desc: 'Miscellaneous business operations including cleaning, maintenance, and trade work.' },
+  { id: 'groceries', name: 'Grocery & Supermarket', desc: 'Daily consumables, fresh produce, and household supplies.' },
+  { id: 'hardware', name: 'Hardware', desc: 'Physical tools, construction materials, and mechanical equipment.' },
+  { id: 'healthcare', name: 'Health', desc: 'Medical, rehabilitative, and preventive care providers and facilities.' },
+  { id: 'hospitality', name: 'Hospitality', desc: 'Lodging, restaurants, event management, and tourism services.' },
+  { id: 'legal', name: 'Legal Services', desc: 'Law firms, attorneys, and professional dispute resolution services.' },
+  { id: 'leisure', name: 'Leisure & Entertainment', desc: 'Sports, recreation, events, and digital media entertainment.' },
+  { id: 'logistics', name: 'Logistics', desc: 'Supply chain, warehousing, freight, and delivery services.' },
+  { id: 'non_profit', name: 'Non-profits', desc: 'Charities, NGOs, religious bodies, and social advocacy groups.' },
+  { id: 'physical_goods', name: 'Physical Goods', desc: 'Tangible retail products purchased and transported physically.' },
+  { id: 'professional_services', name: 'Professional Services', desc: 'B2B consulting, accounting, auditing, and corporate services.' },
+  { id: 'real_estate', name: 'Real Estate', desc: 'Property sales, leasing, management, and development.' },
+  { id: 'sports', name: 'Sports & Recreation', desc: 'Gyms, athletic gear, personal training, and outdoor activities.' },
+  { id: 'transportation', name: 'Transport', desc: 'Transit networks, ride-hailing, shipping lines, and commercial transit.' },
+  { id: 'travel', name: 'Travel', desc: 'Airlines, booking agencies, tourism operations, and vehicle rentals.' },
+  { id: 'utilities', name: 'Utilities', desc: 'Essential public services like power, water, waste, and telecommunications.' }
+];
+
 export default function ProfilePage() {
   const router = useRouter();
   const [businessType, setBusinessType] = useState<'STARTER' | 'REGISTERED'>('STARTER');
@@ -51,6 +80,8 @@ export default function ProfilePage() {
     e.preventDefault();
     router.push('/dashboard/compliance/contact');
   };
+
+  const selectedIndustryObj = INDUSTRIES.find(ind => ind.id === formData.industry);
 
   return (
     <form onSubmit={handleSaveAndNext}>
@@ -119,10 +150,15 @@ export default function ProfilePage() {
           <TooltipLabel label="Industry" required tooltipText="The broad industry that best fits your business operations." />
           <select className="input-select" required value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})}>
             <option value="">Select Industry...</option>
-            <option value="digital_goods">Digital goods</option>
-            <option value="ecommerce">E-commerce</option>
-            <option value="education">Education</option>
+            {INDUSTRIES.map(ind => (
+              <option key={ind.id} value={ind.id}>{ind.name}</option>
+            ))}
           </select>
+          {selectedIndustryObj && (
+            <span className="help-text" style={{ color: 'var(--brand-primary)', opacity: 0.9 }}>
+              {selectedIndustryObj.desc}
+            </span>
+          )}
         </div>
 
         <div>
@@ -131,6 +167,8 @@ export default function ProfilePage() {
             <option value="">Select Category...</option>
             <option value="software">Digital - software applications</option>
             <option value="ebooks">Digital - ebooks and courses</option>
+            <option value="physical_retail">Physical Retail</option>
+            <option value="services">Professional Consulting</option>
           </select>
         </div>
       </div>
