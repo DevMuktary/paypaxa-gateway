@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Clean Tooltip Component
 const TooltipLabel = ({ label, required, tooltipText }: { label: string, required?: boolean, tooltipText?: string }) => {
   const [show, setShow] = useState(false);
   return (
@@ -31,15 +32,16 @@ const TooltipLabel = ({ label, required, tooltipText }: { label: string, require
   );
 };
 
+// Massive Industry List
 const INDUSTRIES = [
   { id: 'agriculture', name: 'Agriculture', desc: 'Farming, livestock, fisheries, logging, and forestry operations.' },
   { id: 'automotive', name: 'Automotive', desc: 'Vehicle manufacturing, sales, repairs, and auto parts distribution.' },
-  { id: 'clothing', name: 'Clothing & Fashion', desc: 'Apparel, footwear, jewelry, and wearable fashion accessories.' },
-  { id: 'digital_goods', name: 'Digital Goods', desc: 'Intangible retail products like software, digital art, and subscriptions.' },
-  { id: 'digital_services', name: 'Digital Services', desc: 'Cloud software, online marketing, web hosting, and virtual consulting.' },
+  { id: 'clothing', name: 'Clothing & Fashion', desc: 'Apparel, footwear, jewelry, tailoring, and wearable fashion accessories.' },
+  { id: 'digital_goods', name: 'Digital Goods', desc: 'Intangible retail products like software, digital art, e-books, and subscriptions.' },
+  { id: 'digital_services', name: 'Digital Services & Tech', desc: 'Software development, web design, app creation, online marketing, and web hosting.' },
   { id: 'education', name: 'Education', desc: 'Public and private institutions offering training, schooling, and academic programs.' },
   { id: 'electronics', name: 'Electronics', desc: 'Consumer tech, gadgets, computers, and home appliances.' },
-  { id: 'financial_services', name: 'Financial Services', desc: 'Banks, lenders, brokers, insurers, and investment agencies.' },
+  { id: 'financial_services', name: 'Financial Services', desc: 'Banks, lenders, brokers, insurers, POS agents, and investment agencies.' },
   { id: 'gaming', name: 'Gaming', desc: 'Betting, wagering, lotteries, and prediction platforms.' },
   { id: 'general_services', name: 'General Services', desc: 'Miscellaneous business operations including cleaning, maintenance, and trade work.' },
   { id: 'groceries', name: 'Grocery & Supermarket', desc: 'Daily consumables, fresh produce, and household supplies.' },
@@ -47,11 +49,11 @@ const INDUSTRIES = [
   { id: 'healthcare', name: 'Health & Medical', desc: 'Medical, rehabilitative, and preventive care providers and facilities.' },
   { id: 'hospitality', name: 'Hospitality', desc: 'Lodging, restaurants, event management, and tourism services.' },
   { id: 'legal', name: 'Legal Services', desc: 'Law firms, attorneys, and professional dispute resolution services.' },
-  { id: 'leisure', name: 'Leisure & Entertainment', desc: 'Sports, recreation, events, and digital media entertainment.' },
+  { id: 'leisure', name: 'Leisure & Entertainment', desc: 'Sports, recreation, events, content creation, and digital media entertainment.' },
   { id: 'logistics', name: 'Logistics', desc: 'Supply chain, warehousing, freight, and delivery services.' },
   { id: 'non_profit', name: 'Non-profits & NGOs', desc: 'Charities, NGOs, religious bodies, and social advocacy groups.' },
   { id: 'physical_goods', name: 'Physical Goods (Retail)', desc: 'Tangible retail products purchased and transported physically.' },
-  { id: 'professional_services', name: 'Professional Services', desc: 'B2B consulting, accounting, auditing, and corporate services.' },
+  { id: 'professional_services', name: 'Professional Services', desc: 'B2B consulting, freelance writing, accounting, auditing, and corporate services.' },
   { id: 'real_estate', name: 'Real Estate', desc: 'Property sales, leasing, management, and development.' },
   { id: 'sports', name: 'Sports & Recreation', desc: 'Gyms, athletic gear, personal training, and outdoor activities.' },
   { id: 'transportation', name: 'Transport', desc: 'Transit networks, ride-hailing, shipping lines, and commercial transit.' },
@@ -59,27 +61,28 @@ const INDUSTRIES = [
   { id: 'utilities', name: 'Utilities', desc: 'Essential public services like power, water, waste, and telecommunications.' }
 ];
 
+// Deeply Expanded Categories mapping
 const CATEGORIES: Record<string, {id: string, name: string}[]> = {
-  agriculture: [{id: 'farming', name: 'Crop Farming'}, {id: 'livestock', name: 'Livestock & Poultry'}, {id: 'fishing', name: 'Fishing & Aquaculture'}, {id: 'forestry', name: 'Forestry & Logging'}],
+  agriculture: [{id: 'farming', name: 'Crop Farming'}, {id: 'livestock', name: 'Livestock & Poultry'}, {id: 'fishing', name: 'Fishing & Aquaculture'}, {id: 'forestry', name: 'Forestry & Logging'}, {id: 'agro_allied', name: 'Agro-Allied Services'}],
   automotive: [{id: 'auto_sales', name: 'Auto Dealership / Sales'}, {id: 'auto_repair', name: 'Auto Repair & Maintenance'}, {id: 'auto_parts', name: 'Auto Parts & Accessories'}, {id: 'car_rental', name: 'Car Rental Services'}],
-  clothing: [{id: 'mens_clothing', name: "Men's Clothing"}, {id: 'womens_clothing', name: "Women's Clothing"}, {id: 'shoes', name: 'Footwear & Shoes'}, {id: 'accessories', name: 'Jewelry & Accessories'}],
-  digital_goods: [{id: 'software_apps', name: 'Software Applications'}, {id: 'digital_media', name: 'Digital Art & Music'}, {id: 'ebooks', name: 'E-books & Courses'}, {id: 'subscriptions', name: 'Digital Subscriptions'}],
-  digital_services: [{id: 'web_hosting', name: 'Web Hosting & Domain'}, {id: 'marketing', name: 'Digital Marketing & SEO'}, {id: 'cloud_computing', name: 'Cloud Computing (SaaS)'}, {id: 'design', name: 'Graphic & Web Design'}],
-  education: [{id: 'schools', name: 'Schools & Universities'}, {id: 'online_courses', name: 'Online Courses'}, {id: 'tutoring', name: 'Private Tutoring'}, {id: 'vocational', name: 'Vocational Training'}],
-  electronics: [{id: 'computers', name: 'Computers & Laptops'}, {id: 'mobile', name: 'Mobile Phones'}, {id: 'home_appliances', name: 'Home Appliances'}, {id: 'gadgets', name: 'Consumer Gadgets'}],
-  financial_services: [{id: 'banking', name: 'Banking & Credit Unions'}, {id: 'insurance', name: 'Insurance Agencies'}, {id: 'investment', name: 'Investment & Stockbroking'}, {id: 'crypto', name: 'Cryptocurrency Services'}],
+  clothing: [{id: 'mens_clothing', name: "Men's Clothing"}, {id: 'womens_clothing', name: "Women's Clothing"}, {id: 'childrens', name: "Children's Clothing"}, {id: 'shoes', name: 'Footwear & Shoes'}, {id: 'accessories', name: 'Jewelry & Accessories'}, {id: 'tailoring', name: 'Tailoring & Fashion Design'}],
+  digital_goods: [{id: 'software_apps', name: 'Software Applications'}, {id: 'digital_media', name: 'Digital Art & Music'}, {id: 'ebooks', name: 'E-books & Courses'}, {id: 'subscriptions', name: 'Digital Subscriptions'}, {id: 'templates', name: 'Templates & Digital Assets'}],
+  digital_services: [{id: 'software_dev', name: 'Software Development'}, {id: 'web_dev', name: 'Web Development'}, {id: 'app_dev', name: 'Mobile App Development'}, {id: 'design', name: 'UI/UX & Graphic Design'}, {id: 'marketing', name: 'Digital Marketing & SEO'}, {id: 'web_hosting', name: 'Web Hosting & Domain'}, {id: 'social_media', name: 'Social Media Management'}],
+  education: [{id: 'schools', name: 'Schools & Universities'}, {id: 'online_courses', name: 'Online Courses'}, {id: 'tutoring', name: 'Private Tutoring'}, {id: 'vocational', name: 'Vocational Training'}, {id: 'educational_materials', name: 'Educational Materials'}],
+  electronics: [{id: 'computers', name: 'Computers & Laptops'}, {id: 'mobile', name: 'Mobile Phones & Accessories'}, {id: 'home_appliances', name: 'Home Appliances'}, {id: 'gadgets', name: 'Consumer Gadgets'}],
+  financial_services: [{id: 'banking', name: 'Banking & Credit Unions'}, {id: 'pos_agent', name: 'POS / Mobile Money Agent'}, {id: 'insurance', name: 'Insurance Agencies'}, {id: 'investment', name: 'Investment & Stockbroking'}, {id: 'crypto', name: 'Cryptocurrency Services'}],
   gaming: [{id: 'sports_betting', name: 'Sports Betting'}, {id: 'casino', name: 'Online Casino'}, {id: 'esports', name: 'E-sports & Video Games'}, {id: 'lottery', name: 'Lottery & Predictions'}],
-  general_services: [{id: 'cleaning', name: 'Cleaning Services'}, {id: 'maintenance', name: 'Maintenance & Repair'}, {id: 'trades', name: 'Trade Work (Plumbing, Electrical)'}, {id: 'laundry', name: 'Laundry & Dry Cleaning'}],
+  general_services: [{id: 'cleaning', name: 'Cleaning Services'}, {id: 'maintenance', name: 'Maintenance & Repair'}, {id: 'plumbing_electrical', name: 'Trade Work (Plumbing, Electrical)'}, {id: 'laundry', name: 'Laundry & Dry Cleaning'}, {id: 'photography', name: 'Photography & Videography'}],
   groceries: [{id: 'supermarket', name: 'Supermarket'}, {id: 'local_grocery', name: 'Local Grocery Store'}, {id: 'fresh_produce', name: 'Fresh Produce & Meats'}, {id: 'bakery', name: 'Bakery & Confectionery'}],
   hardware: [{id: 'tools', name: 'Tools & Equipment'}, {id: 'construction', name: 'Construction Materials'}, {id: 'heavy_machinery', name: 'Heavy Machinery'}, {id: 'plumbing_supplies', name: 'Plumbing & Electrical Supplies'}],
   healthcare: [{id: 'clinics', name: 'Clinics & Hospitals'}, {id: 'pharmacy', name: 'Pharmacies'}, {id: 'telemedicine', name: 'Telemedicine'}, {id: 'dental', name: 'Dental Care'}],
   hospitality: [{id: 'hotels', name: 'Hotels & Lodging'}, {id: 'restaurants', name: 'Restaurants & Cafes'}, {id: 'events', name: 'Event Planning & Catering'}, {id: 'bars', name: 'Bars & Nightlife'}],
   legal: [{id: 'law_firm', name: 'Law Firm'}, {id: 'notary', name: 'Notary Services'}, {id: 'corporate_legal', name: 'Corporate Legal Services'}, {id: 'consulting', name: 'Legal Consulting'}],
-  leisure: [{id: 'event_tickets', name: 'Event Ticketing'}, {id: 'cinemas', name: 'Cinemas & Theaters'}, {id: 'amusement', name: 'Amusement & Theme Parks'}, {id: 'clubs', name: 'Recreational Clubs'}],
+  leisure: [{id: 'content_creator', name: 'Content Creator / Influencer'}, {id: 'event_tickets', name: 'Event Ticketing'}, {id: 'cinemas', name: 'Cinemas & Theaters'}, {id: 'amusement', name: 'Amusement & Theme Parks'}],
   logistics: [{id: 'courier', name: 'Courier & Delivery'}, {id: 'freight', name: 'Freight Forwarding'}, {id: 'warehousing', name: 'Warehousing & Storage'}, {id: 'moving', name: 'Moving Services'}],
   non_profit: [{id: 'charity', name: 'Charity & NGO'}, {id: 'religious', name: 'Religious Organization'}, {id: 'advocacy', name: 'Social Advocacy'}, {id: 'political', name: 'Political Party'}],
-  physical_goods: [{id: 'furniture', name: 'Furniture & Home Decor'}, {id: 'toys', name: 'Toys & Hobbies'}, {id: 'sports_goods', name: 'Sporting Goods'}, {id: 'office_supplies', name: 'Office Supplies'}],
-  professional_services: [{id: 'accounting', name: 'Accounting & Auditing'}, {id: 'consulting', name: 'Business Consulting'}, {id: 'architecture', name: 'Architecture & Engineering'}, {id: 'hr', name: 'Human Resources & Recruitment'}],
+  physical_goods: [{id: 'furniture', name: 'Furniture & Home Decor'}, {id: 'beauty', name: 'Beauty & Cosmetics'}, {id: 'sports_goods', name: 'Sporting Goods'}, {id: 'office_supplies', name: 'Office Supplies'}],
+  professional_services: [{id: 'accounting', name: 'Accounting & Auditing'}, {id: 'freelance_writer', name: 'Freelance Writing & Copywriting'}, {id: 'virtual_assistant', name: 'Virtual Assistant'}, {id: 'consulting', name: 'Business Consulting'}],
   real_estate: [{id: 'property_sales', name: 'Property Sales'}, {id: 'property_management', name: 'Property Management'}, {id: 'short_term', name: 'Short-term Rentals'}, {id: 'development', name: 'Real Estate Development'}],
   sports: [{id: 'gyms', name: 'Gyms & Fitness Centers'}, {id: 'sports_clubs', name: 'Sports Clubs'}, {id: 'coaching', name: 'Sports Coaching'}, {id: 'outdoor', name: 'Outdoor Activities & Tours'}],
   transportation: [{id: 'taxi', name: 'Taxis & Ride-Hailing'}, {id: 'bus', name: 'Bus Transit'}, {id: 'shipping', name: 'Shipping Lines'}, {id: 'trucking', name: 'Commercial Trucking'}],
@@ -107,12 +110,11 @@ export default function ProfilePage() {
     router.push('/dashboard/compliance/contact');
   };
 
-  // Dynamic industry selection handler
   const handleIndustryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData({
       ...formData,
       industry: e.target.value,
-      category: '' // Reset category when industry changes
+      category: '' // Reset category so they are forced to select a new valid one
     });
   };
 
@@ -165,7 +167,7 @@ export default function ProfilePage() {
         </div>
 
         <div>
-          <TooltipLabel label="Annual projected sales volume" required tooltipText="Your estimated total processing volume in a year. We use your projected sales to tailor pricing, limits, and support for your business." />
+          <TooltipLabel label="Projected sales volume" required tooltipText="Your estimated total processing volume in a year. We use your projected sales to tailor pricing, limits, and support for your business." />
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '12px', opacity: 0.5, fontSize: '13px', fontWeight: 600 }}>NGN</span>
             <input 
@@ -212,7 +214,7 @@ export default function ProfilePage() {
         <TooltipLabel label="Business type" required tooltipText="Select whether you are legally registered with the Corporate Affairs Commission (CAC) or operating as an individual." />
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '6px', cursor: 'pointer', backgroundColor: businessType === 'STARTER' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'STARTER' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '8px', cursor: 'pointer', backgroundColor: businessType === 'STARTER' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'STARTER' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
             <input type="radio" name="businessType" checked={businessType === 'STARTER'} onChange={() => setBusinessType('STARTER')} style={{ marginTop: '2px', accentColor: 'var(--brand-primary)' }} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '14px' }}>Starter Business</div>
@@ -220,7 +222,7 @@ export default function ProfilePage() {
             </div>
           </label>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '6px', cursor: 'pointer', backgroundColor: businessType === 'REGISTERED' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'REGISTERED' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '8px', cursor: 'pointer', backgroundColor: businessType === 'REGISTERED' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'REGISTERED' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
             <input type="radio" name="businessType" checked={businessType === 'REGISTERED'} onChange={() => setBusinessType('REGISTERED')} style={{ marginTop: '2px', accentColor: 'var(--brand-primary)' }} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '14px' }}>Registered Business</div>
@@ -230,7 +232,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* DYNAMIC REGISTRATION BLOCK FOR REGISTERED BUSINESSES */}
+      {/* DYNAMIC REGISTRATION BLOCK */}
       {businessType === 'REGISTERED' && (
         <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border-light)' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>Registration Details</h3>
