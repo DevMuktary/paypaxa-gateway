@@ -20,69 +20,47 @@ export default function ComplianceLayout({ children }: { children: React.ReactNo
     <div className="compliance-wrapper">
       <style dangerouslySetInnerHTML={{__html: `
         :root {
-          --brand-primary: #1A56DB; /* Pure Brand Blue */
+          --brand-primary: #1A56DB; 
           --bg-overlay: rgba(128, 128, 128, 0.05);
           --border-light: rgba(128, 128, 128, 0.2);
+          --dropdown-bg: #FFFFFF;
+          --dropdown-text: #111827;
         }
 
         @media (prefers-color-scheme: dark) {
           :root {
-            --brand-primary: #3B82F6; /* Slightly brighter blue for dark mode */
+            --brand-primary: #3B82F6; 
+            --dropdown-bg: #0F172A;
+            --dropdown-text: #F9FAFB;
           }
         }
 
-        .compliance-wrapper { 
-          display: flex; 
-          align-items: flex-start;
-          gap: 24px; 
-          max-width: 900px; 
-          margin: 0 auto; 
-          padding: 24px 16px;
-          font-family: inherit;
-        }
-        
+        .compliance-wrapper { display: flex; align-items: flex-start; gap: 24px; max-width: 900px; margin: 0 auto; padding: 24px 16px; font-family: inherit; }
         .compliance-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 24px; }
         
-        .nav-item { 
-          display: block; padding: 10px 12px; border-radius: 6px; 
-          color: inherit; font-weight: 500; font-size: 14px; 
-          text-decoration: none; margin-bottom: 4px; transition: 0.2s; opacity: 0.7;
-        }
+        .nav-item { display: block; padding: 10px 12px; border-radius: 6px; color: inherit; font-weight: 500; font-size: 14px; text-decoration: none; margin-bottom: 4px; transition: 0.2s; opacity: 0.7; }
         .nav-item:hover { background-color: var(--bg-overlay); opacity: 1; }
-        .nav-item.active { 
-          background-color: var(--bg-overlay); font-weight: 600; opacity: 1;
-          border-left: 3px solid var(--brand-primary); color: var(--brand-primary);
-        }
+        .nav-item.active { background-color: var(--bg-overlay); font-weight: 600; opacity: 1; border-left: 3px solid var(--brand-primary); color: var(--brand-primary); }
 
-        .compliance-main { 
-          flex: 1; width: 100%;
-          background-color: var(--bg-overlay); border: 1px solid var(--border-light);
-          border-radius: 8px; padding: 32px; 
-        }
+        .compliance-main { flex: 1; width: 100%; background-color: var(--bg-overlay); border: 1px solid var(--border-light); border-radius: 8px; padding: 32px; }
 
-        /* Form Styles */
         .page-title { font-size: 18px; font-weight: 600; margin: 0 0 24px 0; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
         .input-group { margin-bottom: 20px; }
         .input-label { font-size: 13px; font-weight: 600; opacity: 0.9; margin: 0; }
         
-        .input-field, .input-select, .input-textarea { 
-          width: 100%; padding: 10px 14px; background-color: transparent; 
-          border: 1px solid var(--border-light); border-radius: 6px; 
-          color: inherit; font-size: 14px; outline: none; transition: 0.2s; font-family: inherit; 
-        }
+        .input-field, .input-select, .input-textarea { width: 100%; padding: 10px 14px; background-color: transparent; border: 1px solid var(--border-light); border-radius: 6px; color: inherit; font-size: 14px; outline: none; transition: 0.2s; font-family: inherit; }
         .input-field:focus, .input-select:focus, .input-textarea:focus { border-color: var(--brand-primary); }
+        
+        /* THE FIX: Forces dropdown options to be visible in all OS modes */
+        option { background-color: var(--dropdown-bg); color: var(--dropdown-text); }
+        
         .input-textarea { resize: vertical; min-height: 80px; }
         .help-text { font-size: 12px; opacity: 0.6; margin-top: 6px; display: block; line-height: 1.4; }
         .required-star { color: #EF4444; margin-left: 2px; }
 
-        /* THE FIX: Solid Blue Button with Pure White Text */
-        .btn-primary { 
-          background-color: var(--brand-primary); color: #FFFFFF; 
-          padding: 12px 20px; border-radius: 6px; font-weight: 600; 
-          font-size: 14px; border: none; cursor: pointer; transition: 0.2s; 
-          margin-top: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        /* THE FIX: Button strictly locked to blue and white */
+        .btn-primary { background-color: #1A56DB; color: #FFFFFF; padding: 12px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: 0.2s; margin-top: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary:hover { background-color: #1E40AF; transform: translateY(-1px); }
         .btn-primary:active { transform: scale(0.98); }
 
         @media (max-width: 768px) {
