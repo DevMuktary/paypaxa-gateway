@@ -12,12 +12,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // New Interactive States
+  // Interactive States
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [isLoadingBiz, setIsLoadingBiz] = useState(true);
+
+  // 🚀 NEW: Dynamic User State
+  const [userData, setUserData] = useState<{ firstName: string, lastName: string, email: string } | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Fake notifications for the UI
   const notifications = [
@@ -27,10 +31,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   useEffect(() => {
+    // 1. Theme Initialization
     const savedTheme = localStorage.getItem('paypaxa-theme') || 'dark';
     setTheme(savedTheme as 'light' | 'dark');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
+    // 2. Fetch Businesses
     const fetchBusinesses = async () => {
       try {
         const res = await fetch('/api/merchant/businesses');
@@ -45,7 +51,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     };
     
+    // 3. 🚀 Fetch Real Logged-In User Data
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data);
+        }
+      } catch (error) {
+        console.error("Failed to load user data");
+      }
+    };
+    
     fetchBusinesses();
+    fetchUser();
   }, []);
 
   const toggleTheme = () => {
@@ -60,10 +80,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsBusinessModalOpen(false);
   };
 
+  // 🚀 SECURE LOGOUT FUNCTION
   const handleLogout = async () => {
-    // In a real app, you'd call an API to clear the HTTP-only cookie here
-    // await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    setIsLoggingOut(true);
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (res.ok) {
+        router.push('/login');
+      } else {
+        console.error("Logout failed on server");
+        setIsLoggingOut(false);
+      }
+    } catch (error) {
+      console.error("Network error during logout", error);
+      setIsLoggingOut(false);
+    }
   };
 
   const activeBusiness = businesses.find(b => b.isActive) || businesses[0];
@@ -158,7 +189,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         .topbar-actions { display: flex; align-items: center; gap: 20px; }
         
-        /* NEW: Header Elements & Dropdowns */
         .header-item-wrapper { position: relative; }
         .action-icon { background: none; border: none; color: var(--text-med); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
         .action-icon:hover { background-color: var(--nav-hover); color: var(--text-high); }
@@ -182,7 +212,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .notif-desc { font-size: 12px; color: var(--text-med); margin: 0 0 8px 0; line-height: 1.4; }
         .notif-time { font-size: 11px; color: var(--text-low); }
 
-        .profile-menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-high); font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; text-decoration: none; }
+        .profile-menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-high); font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; }
         .profile-menu-item:hover { background-color: var(--nav-hover); color: var(--brand-primary); }
         .profile-menu-item.danger { color: #EF4444; border-top: 1px solid var(--border-color); margin-top: 4px; }
         .profile-menu-item.danger:hover { background-color: rgba(239, 68, 68, 0.1); color: #EF4444; }
@@ -335,16 +365,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            {/* PROFILE DROPDOWN */}
+            {/* 🚀 DYNAMIC PROFILE DROPDOWN */}
             <div className="header-item-wrapper">
               <div className="user-avatar" onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotificationsOpen(false); }}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mukhtar" alt="Profile" width="100%" height="100%" />
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userData ? userData.firstName : 'User'}`} 
+                  alt="Profile" 
+                  width="100%" 
+                  height="100%" 
+                />
               </div>
               
-              <div className={`dropdown-menu ${isProfileOpen ? 'open' : ''}`} style={{ width: '220px' }}>
+              <div className={`dropdown-menu ${isProfileOpen ? 'open' : ''}`} style={{ width: '240px' }}>
                 <div className="dropdown-header">
-                  <h4 className="dropdown-title">My Account</h4>
-                  <span style={{ fontSize: '12px', color: 'var(--text-med)' }}>mukhtar@example.com</span>
+                  <h4 className="dropdown-title">
+                    {userData ? `${userData.firstName} ${userData.lastName || ''}` : 'Loading...'}
+                  </h4>
+                  <span style={{ fontSize: '12px', color: 'var(--text-med)', wordBreak: 'break-all' }}>
+                    {userData ? userData.email : 'Please wait'}
+                  </span>
                 </div>
                 <div style={{ padding: '8px 0' }}>
                   <Link href="/dashboard/settings" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
@@ -353,9 +392,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link href="/dashboard/team" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                     <Icons.Team /> Manage Team
                   </Link>
-                  <div className="profile-menu-item danger" onClick={handleLogout}>
-                    <Icons.LogOut /> Sign Out
-                  </div>
+                  <button 
+                    className="profile-menu-item danger" 
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    <Icons.LogOut /> {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+                  </button>
                 </div>
               </div>
             </div>
