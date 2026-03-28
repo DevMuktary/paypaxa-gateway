@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Clean Tooltip Component
-const TooltipLabel = ({ label, required, tooltipText }: { label: string, required?: boolean, tooltipText?: string }) => {
+// Tooltip Component
+const TooltipLabel = ({ label, htmlFor, required, tooltipText }: { label: string, htmlFor?: string, required?: boolean, tooltipText?: string }) => {
   const [show, setShow] = useState(false);
   return (
     <div style={{ marginBottom: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <label className="input-label">
+        <label htmlFor={htmlFor} className="input-label" style={{ cursor: 'pointer' }}>
           {label} {required && <span className="required-star">*</span>}
         </label>
         {tooltipText && (
@@ -32,7 +32,6 @@ const TooltipLabel = ({ label, required, tooltipText }: { label: string, require
   );
 };
 
-// Massive Industry List
 const INDUSTRIES = [
   { id: 'agriculture', name: 'Agriculture', desc: 'Farming, livestock, fisheries, logging, and forestry operations.' },
   { id: 'automotive', name: 'Automotive', desc: 'Vehicle manufacturing, sales, repairs, and auto parts distribution.' },
@@ -61,7 +60,6 @@ const INDUSTRIES = [
   { id: 'utilities', name: 'Utilities', desc: 'Essential public services like power, water, waste, and telecommunications.' }
 ];
 
-// Deeply Expanded Categories mapping
 const CATEGORIES: Record<string, {id: string, name: string}[]> = {
   agriculture: [{id: 'farming', name: 'Crop Farming'}, {id: 'livestock', name: 'Livestock & Poultry'}, {id: 'fishing', name: 'Fishing & Aquaculture'}, {id: 'forestry', name: 'Forestry & Logging'}, {id: 'agro_allied', name: 'Agro-Allied Services'}],
   automotive: [{id: 'auto_sales', name: 'Auto Dealership / Sales'}, {id: 'auto_repair', name: 'Auto Repair & Maintenance'}, {id: 'auto_parts', name: 'Auto Parts & Accessories'}, {id: 'car_rental', name: 'Car Rental Services'}],
@@ -92,8 +90,11 @@ const CATEGORIES: Record<string, {id: string, name: string}[]> = {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [businessType, setBusinessType] = useState<'STARTER' | 'REGISTERED'>('STARTER');
   
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [businessType, setBusinessType] = useState<'STARTER' | 'REGISTERED'>('STARTER');
   const [formData, setFormData] = useState({
     tradingName: '',
     description: '',
@@ -105,21 +106,75 @@ export default function ProfilePage() {
     registrationType: ''
   });
 
-  const handleSaveAndNext = (e: React.FormEvent) => {
+  // 🚀 LOAD DATA ON MOUNT
+  useEffect(() => {
+    const loadSavedData = async () => {
+      try {
+        const response = await fetch('/api/compliance/profile');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.tradingName) {
+            setBusinessType(data.businessType || 'STARTER');
+            setFormData({
+              tradingName: data.tradingName || '',
+              description: data.description || '',
+              staffSize: data.staffSize || '1 - 5 people',
+              salesVolume: data.salesVolume || '',
+              industry: data.industry || '',
+              category: data.category || '',
+              legalBusinessName: data.legalBusinessName || '',
+              registrationType: data.registrationType || ''
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSavedData();
+  }, []);
+
+  // 🚀 SAVE DATA AND CONTINUE
+  const handleSaveAndNext = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/dashboard/compliance/contact');
+    setIsSaving(true);
+    
+    try {
+      const payload = { ...formData, businessType };
+      const response = await fetch('/api/compliance/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        router.push('/dashboard/compliance/contact');
+      } else {
+        alert("Failed to save progress. Please try again.");
+        setIsSaving(false);
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      setIsSaving(false);
+    }
   };
 
   const handleIndustryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData({
       ...formData,
       industry: e.target.value,
-      category: '' // Reset category so they are forced to select a new valid one
+      category: ''
     });
   };
 
   const selectedIndustryObj = INDUSTRIES.find(ind => ind.id === formData.industry);
   const availableCategories = formData.industry ? CATEGORIES[formData.industry] : [];
+
+  if (isLoading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><svg className="animate-spin" style={{ color: 'var(--brand-primary)' }} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg></div>;
+  }
 
   return (
     <form onSubmit={handleSaveAndNext}>
@@ -127,13 +182,15 @@ export default function ProfilePage() {
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
         <div style={{ width: '60px' }}>
-          <TooltipLabel label="Country" />
-          <input type="text" className="input-field" value="NG" disabled style={{ textAlign: 'center', opacity: 0.5, cursor: 'not-allowed' }} />
+          <TooltipLabel label="Country" htmlFor="country" />
+          <input type="text" id="country" name="country" className="input-field" value="NG" disabled style={{ textAlign: 'center', opacity: 0.5, cursor: 'not-allowed' }} />
         </div>
         <div style={{ flex: 1 }}>
-          <TooltipLabel label="Trading name" required tooltipText="The name your customers know you by. This will appear on your receipts, emails, and checkout pages." />
+          <TooltipLabel label="Trading name" htmlFor="tradingName" required tooltipText="The name your customers know you by. This will appear on your receipts, emails, and checkout pages." />
           <input 
             type="text" 
+            id="tradingName"
+            name="tradingName"
             className="input-field" 
             placeholder="Please enter a trading name" 
             required 
@@ -144,8 +201,10 @@ export default function ProfilePage() {
       </div>
 
       <div className="input-group">
-        <TooltipLabel label="Description" required tooltipText="A clear, detailed explanation of the products or services you offer. We use this to understand your business model." />
+        <TooltipLabel label="Description" htmlFor="description" required tooltipText="A clear, detailed explanation of the products or services you offer. We use this to understand your business model." />
         <textarea 
+          id="description"
+          name="description"
           className="input-textarea" 
           placeholder="Describe your business"
           required
@@ -158,8 +217,8 @@ export default function ProfilePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
         <div>
-          <TooltipLabel label="Staff size" required tooltipText="The total number of employees currently working at your business." />
-          <select className="input-select" value={formData.staffSize} onChange={e => setFormData({...formData, staffSize: e.target.value})}>
+          <TooltipLabel label="Staff size" htmlFor="staffSize" required tooltipText="The total number of employees currently working at your business." />
+          <select id="staffSize" name="staffSize" className="input-select" value={formData.staffSize} onChange={e => setFormData({...formData, staffSize: e.target.value})}>
             <option value="1 - 5 people">1 - 5 people</option>
             <option value="6 - 50 people">6 - 50 people</option>
             <option value="50+ people">50+ people</option>
@@ -167,11 +226,13 @@ export default function ProfilePage() {
         </div>
 
         <div>
-          <TooltipLabel label="Projected sales volume" required tooltipText="Your estimated total processing volume in a year. We use your projected sales to tailor pricing, limits, and support for your business." />
+          <TooltipLabel label="Projected sales volume" htmlFor="salesVolume" required tooltipText="Your estimated total processing volume in a year. We use your projected sales to tailor pricing, limits, and support for your business." />
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '12px', opacity: 0.5, fontSize: '13px', fontWeight: 600 }}>NGN</span>
             <input 
               type="text" 
+              id="salesVolume"
+              name="salesVolume"
               className="input-field" 
               style={{ paddingLeft: '48px' }}
               placeholder="0.00" 
@@ -185,8 +246,8 @@ export default function ProfilePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         <div>
-          <TooltipLabel label="Industry" required tooltipText="The broad industry that best fits your business operations." />
-          <select className="input-select" required value={formData.industry} onChange={handleIndustryChange}>
+          <TooltipLabel label="Industry" htmlFor="industry" required tooltipText="The broad industry that best fits your business operations." />
+          <select id="industry" name="industry" className="input-select" required value={formData.industry} onChange={handleIndustryChange}>
             <option value="">Select Industry...</option>
             {INDUSTRIES.map(ind => (
               <option key={ind.id} value={ind.id}>{ind.name}</option>
@@ -200,8 +261,8 @@ export default function ProfilePage() {
         </div>
 
         <div>
-          <TooltipLabel label="Category" required tooltipText="A more specific category within your industry." />
-          <select className="input-select" required disabled={!formData.industry} value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+          <TooltipLabel label="Category" htmlFor="category" required tooltipText="A more specific category within your industry." />
+          <select id="category" name="category" className="input-select" required disabled={!formData.industry} value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
             <option value="">Select Category...</option>
             {availableCategories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -214,16 +275,16 @@ export default function ProfilePage() {
         <TooltipLabel label="Business type" required tooltipText="Select whether you are legally registered with the Corporate Affairs Commission (CAC) or operating as an individual." />
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '8px', cursor: 'pointer', backgroundColor: businessType === 'STARTER' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'STARTER' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
-            <input type="radio" name="businessType" checked={businessType === 'STARTER'} onChange={() => setBusinessType('STARTER')} style={{ marginTop: '2px', accentColor: 'var(--brand-primary)' }} />
+          <label htmlFor="typeStarter" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '6px', cursor: 'pointer', backgroundColor: businessType === 'STARTER' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'STARTER' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
+            <input type="radio" id="typeStarter" name="businessType" checked={businessType === 'STARTER'} onChange={() => setBusinessType('STARTER')} style={{ marginTop: '2px', accentColor: 'var(--brand-primary)' }} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '14px' }}>Starter Business</div>
               <div style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px', lineHeight: 1.4 }}>Submit your personal information and collect up to NGN 5,000,000 without registration documents.</div>
             </div>
           </label>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '8px', cursor: 'pointer', backgroundColor: businessType === 'REGISTERED' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'REGISTERED' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
-            <input type="radio" name="businessType" checked={businessType === 'REGISTERED'} onChange={() => setBusinessType('REGISTERED')} style={{ marginTop: '2px', accentColor: 'var(--brand-primary)' }} />
+          <label htmlFor="typeRegistered" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', border: '1px solid var(--border-light)', borderRadius: '6px', cursor: 'pointer', backgroundColor: businessType === 'REGISTERED' ? 'var(--bg-overlay)' : 'transparent', borderColor: businessType === 'REGISTERED' ? 'var(--brand-primary)' : 'var(--border-light)' }}>
+            <input type="radio" id="typeRegistered" name="businessType" checked={businessType === 'REGISTERED'} onChange={() => setBusinessType('REGISTERED')} style={{ marginTop: '2px', accentColor: 'var(--brand-primary)' }} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '14px' }}>Registered Business</div>
               <div style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px', lineHeight: 1.4 }}>Upload valid business registration documents and get access to full features.</div>
@@ -232,15 +293,16 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* DYNAMIC REGISTRATION BLOCK */}
       {businessType === 'REGISTERED' && (
         <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border-light)' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>Registration Details</h3>
           
           <div className="input-group">
-            <TooltipLabel label="Legal business name" required tooltipText="The exact company name written on your CAC certificate." />
+            <TooltipLabel label="Legal business name" htmlFor="legalBusinessName" required tooltipText="The exact company name written on your CAC certificate." />
             <input 
               type="text" 
+              id="legalBusinessName"
+              name="legalBusinessName"
               className="input-field" 
               placeholder="Please enter a legal business name" 
               required={businessType === 'REGISTERED'}
@@ -250,8 +312,10 @@ export default function ProfilePage() {
           </div>
 
           <div className="input-group">
-            <TooltipLabel label="Registration type" required tooltipText="The specific legal structure of your business as registered with the Corporate Affairs Commission." />
+            <TooltipLabel label="Registration type" htmlFor="registrationType" required tooltipText="The specific legal structure of your business as registered with the Corporate Affairs Commission." />
             <select 
+              id="registrationType"
+              name="registrationType"
               className="input-select" 
               required={businessType === 'REGISTERED'}
               value={formData.registrationType}
@@ -272,7 +336,9 @@ export default function ProfilePage() {
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button type="submit" className="btn-primary">Save and Continue</button>
+        <button type="submit" className="btn-primary" disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save and Continue'}
+        </button>
       </div>
     </form>
   );
