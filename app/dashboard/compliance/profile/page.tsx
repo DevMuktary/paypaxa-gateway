@@ -20,7 +20,6 @@ export default function ProfilePage() {
 
   const handleSaveAndNext = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here we will eventually save formData to the database via API
     router.push('/dashboard/compliance/contact');
   };
 
@@ -28,10 +27,10 @@ export default function ProfilePage() {
     <form onSubmit={handleSaveAndNext}>
       <h2 className="page-title">Profile</h2>
 
-      <div className="input-group" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <div style={{ width: '80px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ width: '60px' }}>
           <label className="input-label">Country</label>
-          <input type="text" className="input-field" value="NG" disabled style={{ textAlign: 'center', fontWeight: 'bold', background: 'var(--border-color)' }} />
+          <input type="text" className="input-field" value="NG" disabled style={{ textAlign: 'center', opacity: 0.6, cursor: 'not-allowed' }} />
         </div>
         <div style={{ flex: 1 }}>
           <label className="input-label">Trading name <span className="required-star">*</span></label>
@@ -56,10 +55,10 @@ export default function ProfilePage() {
           value={formData.description}
           onChange={e => setFormData({...formData, description: e.target.value})}
         ></textarea>
-        <span className="help-text">Please enter at least 100 characters. Currently: {formData.description.length} chars.</span>
+        <span className="help-text">Please enter at least 100 characters. Currently: {formData.description.length}</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
         <div className="input-group">
           <label className="input-label">Staff size <span className="required-star">*</span></label>
           <select className="input-select" value={formData.staffSize} onChange={e => setFormData({...formData, staffSize: e.target.value})}>
@@ -71,23 +70,23 @@ export default function ProfilePage() {
 
         <div className="input-group">
           <label className="input-label">Annual projected sales volume <span className="required-star">*</span></label>
-          <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>NGN</span>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: '12px', opacity: 0.5, fontSize: '13px' }}>NGN</span>
             <input 
               type="text" 
               className="input-field" 
-              style={{ paddingLeft: '56px' }}
+              style={{ paddingLeft: '48px' }}
               placeholder="0.00" 
               required 
               value={formData.salesVolume}
               onChange={e => setFormData({...formData, salesVolume: e.target.value.replace(/\D/g, '')})}
             />
           </div>
-          <span className="help-text">We use your projected sales to tailor pricing, limits, and support for your business</span>
+          <span className="help-text">Used to tailor pricing and limits.</span>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
         <div className="input-group">
           <label className="input-label">Industry <span className="required-star">*</span></label>
           <select className="input-select" required value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})}>
@@ -108,34 +107,31 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="input-group">
-        <label className="input-label" style={{ fontSize: '15px', marginBottom: '16px' }}>Business type <span className="required-star">*</span></label>
+      <div className="input-group" style={{ marginTop: '24px' }}>
+        <label className="input-label" style={{ marginBottom: '12px' }}>Business type <span className="required-star">*</span></label>
         
-        <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginBottom: '12px', background: businessType === 'STARTER' ? 'var(--brand-light)' : 'transparent', borderColor: businessType === 'STARTER' ? 'var(--brand-primary)' : 'var(--border-color)', cursor: 'pointer' }} onClick={() => setBusinessType('STARTER')}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <input type="radio" checked={businessType === 'STARTER'} readOnly style={{ width: '18px', height: '18px', accentColor: 'var(--brand-primary)' }} />
-            <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Starter Business</div>
-          </div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '30px' }}>
-            Submit your personal information and collect up to NGN 5,000,000 without registration documents.
-          </div>
-        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px', border: '1px solid rgba(128, 128, 128, 0.3)', borderRadius: '6px', cursor: 'pointer', backgroundColor: businessType === 'STARTER' ? 'rgba(128, 128, 128, 0.05)' : 'transparent' }}>
+            <input type="radio" name="businessType" checked={businessType === 'STARTER'} onChange={() => setBusinessType('STARTER')} style={{ marginTop: '2px' }} />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '14px' }}>Starter Business</div>
+              <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '2px' }}>Submit personal info and collect up to NGN 5,000,000 without CAC documents.</div>
+            </div>
+          </label>
 
-        <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', background: businessType === 'REGISTERED' ? 'var(--brand-light)' : 'transparent', borderColor: businessType === 'REGISTERED' ? 'var(--brand-primary)' : 'var(--border-color)', cursor: 'pointer' }} onClick={() => setBusinessType('REGISTERED')}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <input type="radio" checked={businessType === 'REGISTERED'} readOnly style={{ width: '18px', height: '18px', accentColor: 'var(--brand-primary)' }} />
-            <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Registered Business</div>
-          </div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '30px' }}>
-            Upload valid business registration documents and get access to full features.
-          </div>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px', border: '1px solid rgba(128, 128, 128, 0.3)', borderRadius: '6px', cursor: 'pointer', backgroundColor: businessType === 'REGISTERED' ? 'rgba(128, 128, 128, 0.05)' : 'transparent' }}>
+            <input type="radio" name="businessType" checked={businessType === 'REGISTERED'} onChange={() => setBusinessType('REGISTERED')} style={{ marginTop: '2px' }} />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '14px' }}>Registered Business</div>
+              <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '2px' }}>Upload valid CAC documents and get access to full features and uncapped limits.</div>
+            </div>
+          </label>
         </div>
       </div>
 
-      {/* DYNAMIC REGISTRATION BLOCK FOR REGISTERED BUSINESSES */}
       {businessType === 'REGISTERED' && (
-        <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: '1px solid var(--border-color)' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '24px' }}>Registration</h3>
+        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(128, 128, 128, 0.2)' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>Registration Documents</h3>
           
           <div className="input-group">
             <label className="input-label">Legal business name <span className="required-star">*</span></label>
@@ -164,16 +160,17 @@ export default function ProfilePage() {
               <option value="ngo">Non-Governmental Organization (NGO)</option>
               <option value="incorporated_trustee">Incorporated Trustee</option>
             </select>
-            <span className="help-text" style={{ marginTop: '8px' }}>
-              {formData.registrationType === 'business_name' && "A business whose name has been reserved with the CAC. Registration numbers usually begin with BN."}
-              {formData.registrationType === 'private_limited' && "A standard limited liability company. Registration numbers usually begin with RC."}
-              {!formData.registrationType && "Select the exact structure listed on your CAC certificate."}
+            <span className="help-text">
+              {formData.registrationType === 'business_name' && "A business whose name has been reserved with the CAC. Reg numbers usually begin with BN."}
+              {formData.registrationType === 'private_limited' && "A standard limited liability company. Reg numbers usually begin with RC."}
             </span>
           </div>
         </div>
       )}
 
-      <button type="submit" className="btn-primary">Save and Continue</button>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button type="submit" className="btn-primary">Save and Continue</button>
+      </div>
     </form>
   );
 }
